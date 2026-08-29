@@ -52,3 +52,25 @@ Abstention escalates by exactly one tier, never more.
 SQLite and an in-process bus by default; Postgres and Redis by environment
 variable in production. Identical application code. A system that needs
 infrastructure to demonstrate fails when the venue network does.
+
+## D10 — The action table is JSON, not YAML (2026-08-29)
+The README originally specified `entitlements.yaml`. PyYAML would be a
+third-party dependency inside `core/`, which D3 forbids. The table is now
+`core/actions/entitlements.json`, loaded with the standard library.
+
+JSON has no comments, so anything that would have been a comment is an
+explicit `note` field on the action or policy. It is still one flat,
+reviewable file that a nodal officer or lawyer can read without reading Python,
+which was the actual requirement.
+
+The table is validated at import, not at request time: an unknown owner, a
+dangling action id, a misspelled fact key or a policy that resolves to nothing
+raises `PolicyTableError` and fails the build. A typo in a statutory reference
+must never become a silently missing referral on a live call.
+
+## D11 — Every action that places a duty must cite its basis (2026-08-29)
+Enforced by `test_every_enforcement_action_cites_a_basis`. Information,
+follow-up and internal control actions are exempt; everything that places a
+duty on an officer or claims an entitlement for a complainant must name the
+provision it rests on. The test caught two actions missing one on first run,
+which is the point of having it.

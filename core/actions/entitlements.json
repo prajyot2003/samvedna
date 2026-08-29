@@ -1,0 +1,429 @@
+{
+  "version": "2026-08-29.1",
+  "note": "Canonical action table. Every recommendation this system makes is an entry here, and every entry names the statutory or clinical provision it rests on. Reviewed by: [pending clinical + legal sign-off].",
+  "owners": {
+    "COUNSELLOR": "NHAA helpline counsellor handling the interaction",
+    "SUPERVISOR": "Helpline shift supervisor",
+    "TELEMANAS": "Tele-MANAS (14416) crisis counsellor",
+    "DISTRICT_NODAL": "District nodal officer, SC/ST (PoA) Act",
+    "DYSP": "Investigating officer, rank of Deputy Superintendent or above",
+    "SP": "Superintendent of Police",
+    "DM": "District Magistrate / District Collector",
+    "DLSA": "District Legal Services Authority",
+    "MEDICAL": "Government medical officer / designated hospital",
+    "CWC": "Child Welfare Committee",
+    "SOCIAL_WELFARE": "District Social Welfare Officer"
+  },
+  "actions": {
+    "info_entitlements": {
+      "label": "Explain entitlements and complaint process",
+      "type": "INFORMATION",
+      "owner": "COUNSELLOR",
+      "sla_minutes": 0,
+      "basis": "SC/ST (PoA) Act s.15A(3) — right to be informed of rights and entitlements"
+    },
+    "followup_7d": {
+      "label": "Scheduled welfare callback within 7 days",
+      "type": "FOLLOW_UP",
+      "owner": "COUNSELLOR",
+      "sla_minutes": 10080
+    },
+    "followup_72h": {
+      "label": "Welfare callback within 72 hours",
+      "type": "FOLLOW_UP",
+      "owner": "COUNSELLOR",
+      "sla_minutes": 4320
+    },
+    "followup_24h": {
+      "label": "Welfare callback within 24 hours",
+      "type": "FOLLOW_UP",
+      "owner": "COUNSELLOR",
+      "sla_minutes": 1440
+    },
+    "counselling_referral": {
+      "label": "Refer to Tele-MANAS for scheduled counselling",
+      "type": "REFERRAL",
+      "owner": "TELEMANAS",
+      "sla_minutes": 2880,
+      "basis": "National Tele Mental Health Programme; SC/ST (PoA) Act s.15A(2) — victim support services"
+    },
+    "priority_counselling": {
+      "label": "Priority counselling assignment within 24 hours",
+      "type": "REFERRAL",
+      "owner": "TELEMANAS",
+      "sla_minutes": 1440,
+      "basis": "National Tele Mental Health Programme; SC/ST (PoA) Act s.15A(2) — victim support services"
+    },
+    "telemanas_warm_transfer": {
+      "label": "Live warm transfer to Tele-MANAS crisis counsellor",
+      "type": "WARM_TRANSFER",
+      "owner": "TELEMANAS",
+      "sla_minutes": 0,
+      "basis": "Crisis escalation — immediate, live handoff, not a callback",
+      "note": "Never a callback. The caller is not released from the line until a Tele-MANAS counsellor has accepted the transfer."
+    },
+    "crisis_safety_plan": {
+      "label": "Complete a collaborative safety plan before the call ends",
+      "type": "CLINICAL",
+      "owner": "TELEMANAS",
+      "sla_minutes": 0,
+      "basis": "Standard crisis-line practice following a positive C-SSRS screen"
+    },
+    "no_auto_close": {
+      "label": "Interaction may not be auto-closed; supervisor sign-off required",
+      "type": "CONTROL",
+      "owner": "SUPERVISOR",
+      "sla_minutes": 0
+    },
+    "supervisor_review": {
+      "label": "Immediate supervisor review of the interaction",
+      "type": "CONTROL",
+      "owner": "SUPERVISOR",
+      "sla_minutes": 60
+    },
+    "dlsa_intimation": {
+      "label": "Intimate District Legal Services Authority",
+      "type": "REFERRAL",
+      "owner": "DLSA",
+      "sla_minutes": 2880,
+      "basis": "SC/ST (PoA) Act s.15A(2) — right to legal aid; NALSA free legal services"
+    },
+    "dlsa_advocate_48h": {
+      "label": "Assign a DLSA panel advocate within 48 hours",
+      "type": "REFERRAL",
+      "owner": "DLSA",
+      "sla_minutes": 2880,
+      "basis": "SC/ST (PoA) Act s.15A(2) read with s.15A(5)"
+    },
+    "s15a_entitlement_packet": {
+      "label": "Raise the s.15A entitlement packet (protection, legal aid, travel and maintenance allowance)",
+      "type": "ENTITLEMENT",
+      "owner": "DISTRICT_NODAL",
+      "sla_minutes": 1440,
+      "basis": "SC/ST (PoA) Act s.15A(2)-(11); Rules 1995 Rule 11 — travel and maintenance"
+    },
+    "district_nodal_notify": {
+      "label": "Notify the district nodal officer the same day",
+      "type": "INTIMATION",
+      "owner": "DISTRICT_NODAL",
+      "sla_minutes": 480,
+      "basis": "SC/ST (PoA) Rules 1995 Rule 9 — nodal officer duties"
+    },
+    "dysp_intimation": {
+      "label": "Intimate the DySP-rank investigating officer",
+      "type": "INTIMATION",
+      "owner": "DYSP",
+      "sla_minutes": 120,
+      "basis": "SC/ST (PoA) Rules 1995 Rule 7 — investigation by an officer not below the rank of DySP"
+    },
+    "protection_assessment": {
+      "label": "Protection assessment for victim and witnesses",
+      "type": "PROTECTION",
+      "owner": "SP",
+      "sla_minutes": 1440,
+      "basis": "SC/ST (PoA) Act s.15A(11) — duty of the State to provide protection"
+    },
+    "witness_protection": {
+      "label": "Initiate witness protection measures",
+      "type": "PROTECTION",
+      "owner": "SP",
+      "sla_minutes": 720,
+      "basis": "SC/ST (PoA) Act s.15A(11); Witness Protection Scheme 2018"
+    },
+    "emergency_relief": {
+      "label": "Initiate immediate relief under the compensation schedule",
+      "type": "ENTITLEMENT",
+      "owner": "DM",
+      "sla_minutes": 1440,
+      "basis": "SC/ST (PoA) Rules 1995 Rule 12(4) and the Annexure I schedule — relief payable in tranches at FIR, chargesheet and conviction"
+    },
+    "dependent_relief": {
+      "label": "Assess dependent relief and subsistence for the deceased's family",
+      "type": "ENTITLEMENT",
+      "owner": "DM",
+      "sla_minutes": 2880,
+      "basis": "SC/ST (PoA) Rules 1995 Rule 12(4) — relief to dependents; pension and employment provisions"
+    },
+    "fir_registration_escalation": {
+      "label": "Escalate non-registration of FIR to the Superintendent of Police",
+      "type": "ESCALATION",
+      "owner": "SP",
+      "sla_minutes": 720,
+      "basis": "SC/ST (PoA) Act s.4 — wilful neglect of duty by a public servant; BNSS provisions on mandatory registration"
+    },
+    "sp_complaint_refusal": {
+      "label": "Register a formal complaint against refusal to record the FIR",
+      "type": "ESCALATION",
+      "owner": "SP",
+      "sla_minutes": 360,
+      "basis": "SC/ST (PoA) Act s.4(2) — refusal to register a case is itself an offence"
+    },
+    "medical_examination": {
+      "label": "Priority medical examination and treatment",
+      "type": "MEDICAL",
+      "owner": "MEDICAL",
+      "sla_minutes": 360,
+      "basis": "SC/ST (PoA) Rules 1995 Rule 12(4); BNSS provisions on medical examination in sexual offence cases"
+    },
+    "medical_assistance": {
+      "label": "Arrange medical assistance and transport",
+      "type": "MEDICAL",
+      "owner": "MEDICAL",
+      "sla_minutes": 1440,
+      "basis": "SC/ST (PoA) Rules 1995 Rule 11 — travel, maintenance and medical facilities"
+    },
+    "cwc_notification": {
+      "label": "Notify the Child Welfare Committee",
+      "type": "INTIMATION",
+      "owner": "CWC",
+      "sla_minutes": 1440,
+      "basis": "POCSO Act s.19(6) read with SC/ST (PoA) Act; JJ Act care and protection provisions"
+    },
+    "shelter_rehabilitation": {
+      "label": "Arrange shelter and rehabilitation for displaced persons",
+      "type": "ENTITLEMENT",
+      "owner": "SOCIAL_WELFARE",
+      "sla_minutes": 720,
+      "basis": "SC/ST (PoA) Rules 1995 Rule 12(4) — resettlement of displaced persons"
+    },
+    "boycott_intervention": {
+      "label": "Refer active social boycott to the District Vigilance and Monitoring Committee",
+      "type": "ESCALATION",
+      "owner": "DM",
+      "sla_minutes": 2880,
+      "basis": "SC/ST (PoA) Act s.3(1)(zc) — social or economic boycott; Rule 17 — District Vigilance and Monitoring Committee"
+    },
+    "economic_relief": {
+      "label": "Assess relief for economic blockade or wage denial",
+      "type": "ENTITLEMENT",
+      "owner": "SOCIAL_WELFARE",
+      "sla_minutes": 2880,
+      "basis": "SC/ST (PoA) Act s.3(1)(zc); Rules 1995 Rule 12(4)"
+    }
+  },
+  "policies": [
+    {
+      "id": "tier_low",
+      "when": {
+        "tier": [
+          "LOW"
+        ]
+      },
+      "then": [
+        "info_entitlements",
+        "followup_7d"
+      ]
+    },
+    {
+      "id": "tier_moderate",
+      "when": {
+        "tier": [
+          "MODERATE"
+        ]
+      },
+      "then": [
+        "info_entitlements",
+        "counselling_referral",
+        "dlsa_intimation",
+        "followup_72h"
+      ]
+    },
+    {
+      "id": "tier_high",
+      "when": {
+        "tier": [
+          "HIGH"
+        ]
+      },
+      "then": [
+        "info_entitlements",
+        "priority_counselling",
+        "dlsa_intimation",
+        "s15a_entitlement_packet",
+        "district_nodal_notify",
+        "supervisor_review",
+        "followup_24h"
+      ]
+    },
+    {
+      "id": "tier_critical",
+      "when": {
+        "tier": [
+          "CRITICAL"
+        ]
+      },
+      "then": [
+        "telemanas_warm_transfer",
+        "dysp_intimation",
+        "protection_assessment",
+        "emergency_relief",
+        "dlsa_advocate_48h",
+        "s15a_entitlement_packet",
+        "district_nodal_notify",
+        "no_auto_close",
+        "supervisor_review",
+        "followup_24h"
+      ],
+      "note": "Critical is the only tier where the caller is not released from the line before a handoff is accepted."
+    },
+    {
+      "id": "suicide_risk",
+      "when": {
+        "rule_triggered_any": [
+          "cssrs_intent_or_behaviour",
+          "explicit_self_harm_language"
+        ]
+      },
+      "then": [
+        "telemanas_warm_transfer",
+        "crisis_safety_plan",
+        "no_auto_close"
+      ],
+      "note": "Fires on the rule, not the tier. Independent of any score."
+    },
+    {
+      "id": "fir_not_registered",
+      "when": {
+        "facts_any": [
+          "fir_not_registered"
+        ],
+        "tier_at_least": "MODERATE"
+      },
+      "then": [
+        "fir_registration_escalation"
+      ]
+    },
+    {
+      "id": "police_refusal",
+      "when": {
+        "facts_any": [
+          "police_refused_registration"
+        ]
+      },
+      "then": [
+        "sp_complaint_refusal",
+        "fir_registration_escalation",
+        "district_nodal_notify"
+      ]
+    },
+    {
+      "id": "minor_victim",
+      "when": {
+        "facts_any": [
+          "victim_minor"
+        ]
+      },
+      "then": [
+        "cwc_notification"
+      ]
+    },
+    {
+      "id": "sexual_offence",
+      "when": {
+        "offence_any": [
+          "rape",
+          "gang_rape",
+          "sexual_assault"
+        ]
+      },
+      "then": [
+        "medical_examination",
+        "protection_assessment",
+        "emergency_relief"
+      ]
+    },
+    {
+      "id": "homicide",
+      "when": {
+        "offence_any": [
+          "murder"
+        ]
+      },
+      "then": [
+        "dysp_intimation",
+        "dependent_relief",
+        "emergency_relief",
+        "protection_assessment"
+      ]
+    },
+    {
+      "id": "displaced",
+      "when": {
+        "facts_any": [
+          "displaced_from_home"
+        ]
+      },
+      "then": [
+        "shelter_rehabilitation"
+      ]
+    },
+    {
+      "id": "sole_earner",
+      "when": {
+        "facts_any": [
+          "sole_earner_lost"
+        ]
+      },
+      "then": [
+        "dependent_relief"
+      ]
+    },
+    {
+      "id": "boycott",
+      "when": {
+        "facts_any": [
+          "social_boycott_active"
+        ]
+      },
+      "then": [
+        "boycott_intervention"
+      ]
+    },
+    {
+      "id": "economic_blockade",
+      "when": {
+        "facts_any": [
+          "economic_blockade"
+        ]
+      },
+      "then": [
+        "economic_relief"
+      ]
+    },
+    {
+      "id": "witness_pressure",
+      "when": {
+        "facts_any": [
+          "witness_pressure"
+        ]
+      },
+      "then": [
+        "witness_protection"
+      ]
+    },
+    {
+      "id": "imminent_threat",
+      "when": {
+        "facts_any": [
+          "threat_imminent"
+        ]
+      },
+      "then": [
+        "protection_assessment",
+        "dysp_intimation"
+      ]
+    },
+    {
+      "id": "vulnerable_health",
+      "when": {
+        "facts_any": [
+          "victim_pregnant",
+          "victim_disabled"
+        ]
+      },
+      "then": [
+        "medical_assistance"
+      ]
+    }
+  ]
+}

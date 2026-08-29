@@ -132,7 +132,7 @@ samvedna/
 │   │   ├── hard_rules.py      escalate-only safety overrides
 │   │   └── lexicons/          per-language crisis lexicons (human-reviewed)
 │   └── actions/
-│       ├── entitlements.yaml  statute → action → owner → SLA
+│       ├── entitlements.json  statute → action → owner → SLA
 │       └── orchestrator.py
 ├── services/
 │   ├── ingest/                channel adapters, consent gate
@@ -221,7 +221,7 @@ sign-off are recorded in `evidence/CLINICAL_BASIS.md`.
 ## 7. Statutory grounding
 
 Recommendations map to entitlements, not to generic advice. The action table in
-`core/actions/entitlements.yaml` encodes:
+`core/actions/entitlements.json` encodes:
 
 - **Section 15A**, SC/ST (PoA) Act — victim and witness rights: protection, legal
   aid, travel and maintenance allowance, right to be heard.
