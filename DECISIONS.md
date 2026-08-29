@@ -109,3 +109,64 @@ construction and `_as_utc` reattaches it on read. Covered by
 Not warned about, not defaulted — refused at the repository boundary. An
 unexplained reversal of a risk assessment is worse than no override at all,
 because it leaves a record that looks considered and is not.
+
+## D21 — ASR confidence is mandatory, not optional (2026-08-29)
+`TranscriptSegment` has no way to express a missing confidence. A backend that
+cannot report how sure it was cannot be used for triage here, because
+confidence is what drives the quality gate, which drives abstention, which is
+the mechanism protecting callers whose dialect the recogniser handles badly.
+
+Whisper emits no calibrated confidence, so one is derived:
+`exp(avg_logprob) * (1 - no_speech_prob)`. The exponential of the mean token
+log-probability is the geometric mean token probability; the second factor
+suppresses segments the model itself believes contain no speech, which is where
+Whisper's hallucinated text appears. It is a proxy, documented as such in the
+model card, used only against a threshold and never shown to a counsellor as a
+percentage.
+
+## D22 — Bhojpuri language substitution is declared, never silent
+Whisper has no Bhojpuri token, so Bhojpuri is decoded as Hindi. That
+substitution is the direct cause of the dialect accuracy gap, so
+`SUBSTITUTED_LANGUAGES` records it and the counsellor console shows
+"decoded using the closest supported language; accuracy is reduced for this
+dialect". Bhashini carries Bhojpuri natively, which is why it is the preferred
+backend for precisely the callers the fairness argument concerns.
+
+## D23 — Bhashini's absent confidence defaults below the gate threshold
+The ULCA ASR response carries no per-segment confidence. Assuming a high value
+would silently disable the abstention path for the production backend — the
+worst possible place for it to be disabled. `UNKNOWN_CONFIDENCE = 0.5` sits
+below `MIN_ASR_CONFIDENCE`, so a transcript with no confidence information is
+treated as unreliable until the field is available.
+
+## D24 — available() never touches the network
+It is called on every routing decision. A version that attempted a download
+would stall a live call behind a model fetch and would report a backend as
+usable on the strength of an uplink a district office may not have. Weights are
+fetched deliberately by `scripts/fetch_models.py`; `weights_cached()` then
+answers from disk.
+
+## D25 — An outage raises; it never returns an empty transcript
+An empty transcript is indistinguishable from a silent caller and would be
+scored as one. Every backend raises `ASRUnavailable` instead, and the router
+raises when nothing can serve the request.
+
+## D26 — The ULCA reference server is a deliverable, not a test fixture
+`services/asr/reference_server.py` implements the Bhashini contract locally over
+real HTTP. The client talks to it with its real transport, retry and parsing
+code — nothing is stubbed client-side. It exists so the team can build against
+the contract before credentials arrive, and so failure modes a live service will
+not produce on demand (5xx, timeout, malformed envelope) are actually tested.
+
+## D27 — Recognition accuracy is measured on real recordings only
+Synthetic signals prove the DSP and nothing about recognition.
+`scripts/validate_asr.py` measures duration-weighted confidence and gate
+outcomes per language over real recorded speech, and reports the Hindi-Bhojpuri
+gap. That measured number goes in the fairness report; no accuracy claim is made
+without it. Recordings are consented, unnamed, git-ignored and never leave the
+machine.
+
+Note on this environment: huggingface.co is blocked by organisation egress
+policy in both the build container and the desktop workspace, so Whisper weights
+cannot be fetched here and the `needs_model` tests skip. They run on a developer
+machine via `make test-asr`.

@@ -2,3 +2,7 @@
 # Everything here belongs to the service layer.
 sqlalchemy>=2.0
 pytest>=8.0
+faster-whisper>=1.0
+numpy>=1.24
+soundfile>=0.12
+opensmile>=2.5

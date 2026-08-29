@@ -11,3 +11,4 @@ data/raw/
 data/audio/
 models/
 .DS_Store
+data/validation/*.wav
