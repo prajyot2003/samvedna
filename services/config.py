@@ -1,0 +1,31 @@
+"""Runtime configuration. Environment variables only, with defaults that make
+the system runnable on a laptop with nothing installed."""
+
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass
+
+
+def _int(name: str, default: int) -> int:
+    try:
+        return int(os.environ.get(name, default))
+    except ValueError:
+        return default
+
+
+@dataclass(frozen=True)
+class Settings:
+    # SQLite by default so `make dev` needs no services. Point this at
+    # postgresql+psycopg://... in production; the application code is identical.
+    database_url: str = os.environ.get("SAMVEDNA_DATABASE_URL", "sqlite:///samvedna.db")
+
+    # Retention. Raw audio is purged aggressively; derived features and the SVI
+    # persist for the life of the case because they are part of the record.
+    audio_retention_days: int = _int("SAMVEDNA_AUDIO_RETENTION_DAYS", 30)
+    transcript_retention_days: int = _int("SAMVEDNA_TRANSCRIPT_RETENTION_DAYS", 180)
+
+    echo_sql: bool = os.environ.get("SAMVEDNA_ECHO_SQL", "").lower() in {"1", "true"}
+
+
+SETTINGS = Settings()

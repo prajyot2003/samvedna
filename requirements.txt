@@ -1,0 +1,4 @@
+# core/ has no dependencies at all and must stay that way (DECISIONS.md D3).
+# Everything here belongs to the service layer.
+sqlalchemy>=2.0
+pytest>=8.0

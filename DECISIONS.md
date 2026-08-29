@@ -74,3 +74,38 @@ follow-up and internal control actions are exempt; everything that places a
 duty on an officer or claims an entitlement for a complainant must name the
 provision it rests on. The test caught two actions missing one on first run,
 which is the point of having it.
+
+## D12 — Audit payloads are normalised before hashing (2026-08-29)
+`core.audit.normalise_payload` flattens a payload to plain JSON types once, and
+the digest is taken over the result. The hash therefore covers exactly the
+bytes the JSON column stores.
+
+Found by `test_actions_persist_with_deadlines_and_a_ledger_entry_each`: an
+action payload carries a `due_at` datetime, which `canonical_json` encodes
+happily but SQLAlchemy's JSON column rejects. The dangerous version of this bug
+is not the crash — it is the near miss where a payload hashes in one shape and
+persists in another, and the chain fails verification weeks later with no way
+to tell tampering from a serialisation quirk.
+
+## D13 — Ledger concurrency is enforced by a UNIQUE constraint on seq
+Appending to a hash chain is a read-modify-write on the head. Concurrent
+writers both compute the same next sequence number; the UNIQUE constraint means
+one insert survives and the other retries against the new head. Retries are
+bounded at 8, after which `ChainAppendError` is raised rather than swallowed —
+a system that cannot record what it did must not carry on doing it.
+
+Standalone appends retry internally. An append that joins a caller's
+transaction does not: there the conflict must surface to the caller, who owns
+the transaction and therefore the retry.
+
+## D14 — Timestamps are reattached as UTC on read
+SQLite has no timezone-aware type, so `DateTime(timezone=True)` round-trips
+naive. `core.audit` refuses naive datetimes by design, which would make every
+chain unverifiable after a restart. All stored timestamps are UTC by
+construction and `_as_utc` reattaches it on read. Covered by
+`test_timestamps_survive_the_round_trip_and_the_chain_still_verifies`.
+
+## D15 — An override without a stated reason is refused
+Not warned about, not defaulted — refused at the repository boundary. An
+unexplained reversal of a risk assessment is worse than no override at all,
+because it leaves a record that looks considered and is not.
