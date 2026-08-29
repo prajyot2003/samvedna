@@ -170,3 +170,81 @@ Note on this environment: huggingface.co is blocked by organisation egress
 policy in both the build container and the desktop workspace, so Whisper weights
 cannot be fetched here and the `needs_model` tests skip. They run on a developer
 machine via `make test-asr`.
+
+## D28 — Redaction runs before persistence, and the boundary is guarded
+`assert_redacted` is called at the storage boundary and raises if redaction
+would still find something. Unredacted text arriving there is a pipeline defect,
+not something to fix quietly at the point of writing.
+
+Structured identifiers (phone, Aadhaar-shaped, PAN, vehicle, FIR, case, email,
+long digit runs, Devanagari numerals) are caught deterministically. Names and
+places are caught by the cues that introduce them in Hindi and Bhojpuri. This is
+NOT a named-entity recogniser: a name with no introducing cue survives it. That
+gap is declared here and in the DPIA rather than assumed away, and the retention
+policy bounds the exposure it leaves.
+
+Replacements are typed — `[PHONE]`, `[VILLAGE]`, `[NAME]` — and the cue word is
+preserved, because a record a counsellor cannot read is not a record.
+
+## D29 — Crisis lexicons carry their review status as data (2026-08-29)
+A lexicon hit can escalate an interaction to CRITICAL with no model consulted,
+so who confirmed the word list is part of the word list. Both lexicons are
+currently `UNREVIEWED` seed lists.
+
+They are still loaded and still used: for a crisis lexicon, matching on an
+unconfirmed term is safer than not matching, because every error it can make
+escalates and escalation is the safe direction. But `reviewed` is False, the
+counsellor console says so, and `production_ready()` returns False with named
+blockers. A system that escalates suicide risk from a word list nobody qualified
+has read is not ready to take live calls, and the code says so out loud.
+
+The Bhojpuri list is thinner than the Hindi one. That is not an oversight to be
+tidied by translating the Hindi file — the whole reason they are separate files
+is that the idioms differ, and a mistranslated idiom of suicidal intent is a
+missed case. Native Bhojpuri speakers, ideally counsellors who take these calls,
+must build it out.
+
+## D30 — Extraction proposes, confirmation decides
+Everything `services/nlp/facts.py` produces is `FactSource.EXTRACTED` and counts
+at a discount in Channel A until the intake agent reads it back and the caller
+confirms. Channel A is the heaviest-weighted channel; a factor inferred from a
+misheard phrase would otherwise move a tier on the strength of an ASR error.
+Extraction confidence is capped below 1.0 so nothing inferred is ever asserted
+as certainly as something confirmed.
+
+Cue-based rather than learned, for the same reasons as the VAD: no labelled
+corpus exists, a rule that fired can be shown to a counsellor and argued with,
+and a rule that misfires can be fixed by the person who noticed.
+`MODEL_EXTRACTORS` is where a learned extractor joins after the pilot, and it
+will be evaluated against these rules rather than assumed to beat them.
+
+## D31 — Channel C is a documented baseline, and its confidence is capped at 0.6
+There is no labelled corpus of NHAA interactions and cannot be one until the
+shadow-mode pilot produces gold labels. Training on acted emotion corpora and
+deploying on real victim calls would produce a model with real reported accuracy
+and unknown field behaviour, which is the exact failure this project is arranged
+to avoid.
+
+So Channel C combines a small number of features whose direction is defensible
+without our own data — lexical severity, conversational timing, and four eGeMAPS
+parameters — with weights chosen a priori and written down. Features whose
+direction is genuinely uncertain are excluded rather than included with a
+guessed weight.
+
+`BASELINE_CONFIDENCE_CAP = 0.6` is the structural safeguard. The engine computes
+the Channel C contribution as `25 * probability * confidence`, so an untrained
+component can move a score by at most 15 points of 100 — never enough on its own
+to cross more than one tier boundary. Lifting the cap requires replacing the
+baseline with something validated against pilot labels, and editing a test that
+asserts the bound. That friction is intended.
+
+Confidence is additionally discounted when the lexicon that contributed is
+unreviewed, so the discount lands on the language whose speakers are worst
+served.
+
+## D32 — The system reports indicators, never emotions
+`DistressAssessment.explain()` names what was observed — "long pause before
+answering", "reduced variation in pitch", "distress language (fear, isolation)"
+— and never an emotion label. Claiming to detect that a caller *is* afraid is
+both scientifically contested and outside what this system is for. A test
+asserts no emotion word appears in the explanation.

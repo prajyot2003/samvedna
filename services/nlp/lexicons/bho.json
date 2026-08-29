@@ -1,0 +1,56 @@
+{
+  "language": "bho",
+  "language_name": "Bhojpuri",
+  "version": "2026-08-29.seed",
+  "review": {
+    "status": "UNREVIEWED",
+    "reviewed_by": null,
+    "reviewed_on": null,
+    "note": "SEED LIST, and thinner than the Hindi one — which is itself the point. Bhojpuri is the language in this system with the weakest ASR and the weakest lexical resources, and its speakers are disproportionately the people this Act exists to protect. This file must be built out by native Bhojpuri speakers, ideally counsellors who take these calls. Do not extend it by translating hi.json: the whole reason a separate file exists is that the idioms differ. Until this is reviewed, Bhojpuri interactions lean harder on the abstention path, which is the correct failure direction."
+  },
+  "categories": {
+    "self_harm": {
+      "severity": "critical",
+      "terms": [
+        "आत्महत्या", "जान दे देब", "मर जाइब", "मरे के मन", "जिये के मन नइखे",
+        "जियला से का फायदा", "ज़हर खा लेब", "फाँसी लगा लेब",
+        "अब ना सहल जाला", "अब बरदाश ना होखे"
+      ]
+    },
+    "hopelessness": {
+      "severity": "high",
+      "terms": [
+        "कवनो रस्ता नइखे", "कवनो उम्मीद नइखे", "कुछ ना बचल", "सब खतम हो गइल",
+        "केहू सुने वाला नइखे", "केहू मदद ना करी", "थक गइनी"
+      ]
+    },
+    "imminent_violence": {
+      "severity": "critical",
+      "terms": [
+        "जान से मार देब", "मारे आ रहल बाड़े", "घर के बाहर खड़ा बाड़े",
+        "हथियार लेके", "जरा देब", "आग लगा देब", "उठा के ले जाइब"
+      ]
+    },
+    "fear": {
+      "severity": "moderate",
+      "terms": [
+        "बहुत डर लागत", "डर के मारे", "घर से ना निकलत", "बाहर ना जा सकत",
+        "नींद ना आवे", "काँपत बानी"
+      ]
+    },
+    "isolation": {
+      "severity": "moderate",
+      "terms": [
+        "केहू बात ना करे", "गाँव वाला लोग", "बहिष्कार", "हुक्का पानी बंद",
+        "दुकान से समान ना", "अकेले पड़ गइनी", "केहू साथ नइखे"
+      ]
+    },
+    "coercion": {
+      "severity": "high",
+      "terms": [
+        "शिकायत वापस", "केस वापस ले ल", "समझौता कर ल", "दबाव डालत",
+        "गवाही मत दिह", "धमकावत बाड़े"
+      ]
+    }
+  }
+}

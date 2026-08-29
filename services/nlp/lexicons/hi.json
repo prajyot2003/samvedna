@@ -1,0 +1,67 @@
+{
+  "language": "hi",
+  "language_name": "Hindi",
+  "version": "2026-08-29.seed",
+  "review": {
+    "status": "UNREVIEWED",
+    "reviewed_by": null,
+    "reviewed_on": null,
+    "note": "SEED LIST. Assembled as a starting point for review, NOT for production use as written. Every entry must be confirmed by a native speaker, and a counsellor with crisis-line experience must add the expressions people actually use — which are usually indirect. Machine translation must never be used to extend this file: a mistranslated idiom of suicidal intent is a missed case, and idiom is exactly what machine translation loses."
+  },
+  "categories": {
+    "self_harm": {
+      "severity": "critical",
+      "note": "Feeds the cssrs/self-harm hard rule directly. Escalates to CRITICAL with no model consulted. False positives here cost a counsellor a few minutes; false negatives can cost a life, so the bar for inclusion is deliberately low.",
+      "terms": [
+        "आत्महत्या", "खुदकुशी", "जान दे दूँगा", "जान दे दूँगी", "जान दे देंगे",
+        "मर जाऊँगा", "मर जाऊँगी", "मरना चाहता हूँ", "मरना चाहती हूँ",
+        "जीना नहीं चाहता", "जीना नहीं चाहती", "जी कर क्या करूँगा",
+        "ज़हर खा", "फांसी लगा", "फाँसी लगा", "कुएँ में कूद", "ट्रेन के आगे",
+        "खुद को खत्म", "अपने आप को खत्म", "सब खत्म कर दूँगा",
+        "अब और नहीं सह सकता", "अब और नहीं सह सकती"
+      ]
+    },
+    "hopelessness": {
+      "severity": "high",
+      "note": "Not on its own a crisis trigger; contributes to the distress signal and prompts the intake agent to administer the C-SSRS earlier in the interaction.",
+      "terms": [
+        "कोई रास्ता नहीं", "कोई उम्मीद नहीं", "कुछ नहीं बचा", "सब खत्म हो गया",
+        "कोई सुनने वाला नहीं", "कोई मदद नहीं करेगा", "बेकार है", "क्या फायदा",
+        "हार गया", "हार गई", "थक गया हूँ", "थक गई हूँ"
+      ]
+    },
+    "imminent_violence": {
+      "severity": "critical",
+      "note": "Feeds the imminent-threat hard rule. Present tense and immediacy markers matter more than the violence word itself.",
+      "terms": [
+        "जान से मार देंगे", "जान से मारने की धमकी", "अभी मारने आ रहे",
+        "घर के बाहर खड़े", "घेर लिया", "हथियार लेकर", "बंदूक लेकर",
+        "अभी हमला", "जला देंगे", "आग लगा देंगे", "उठा ले जाएंगे"
+      ]
+    },
+    "fear": {
+      "severity": "moderate",
+      "terms": [
+        "बहुत डर लग", "डर के मारे", "घर से नहीं निकल", "बाहर नहीं जा सकते",
+        "छिप कर", "काँप रहा", "काँप रही", "रात भर जागता", "नींद नहीं आती"
+      ]
+    },
+    "isolation": {
+      "severity": "moderate",
+      "note": "Social boycott under s.3(1)(zc) frequently presents in these words before the complainant names it as a boycott.",
+      "terms": [
+        "कोई बात नहीं करता", "गाँव वालों ने", "बहिष्कार", "हुक्का पानी बंद",
+        "दुकान से सामान नहीं", "कुएँ से पानी नहीं", "अकेला पड़ गया",
+        "अकेली पड़ गई", "कोई साथ नहीं"
+      ]
+    },
+    "coercion": {
+      "severity": "high",
+      "note": "Pressure to withdraw a complaint. Directly relevant to witness protection under s.15A(11).",
+      "terms": [
+        "शिकायत वापस", "केस वापस ले", "समझौता कर लो", "दबाव डाल",
+        "पैसे देकर", "गवाही मत देना", "मुकर जाओ", "धमका रहे"
+      ]
+    }
+  }
+}
