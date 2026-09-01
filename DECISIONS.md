@@ -302,3 +302,53 @@ A test helper originally answered every PHQ item with one blanket value,
 including item 9, and the interview correctly ended in crisis handover. The test
 data was careless and the system caught it — which is the behaviour wanted, but
 worth recording as the reason item 9 is now answered separately everywhere.
+
+## D38 — One bus, four front doors; subscribers never block publishers
+IVRS, portal, chatbot and mobile normalise into the same typed event stream, so
+the triage engine never learns which channel an interaction arrived through.
+`InProcessBus` is the default and needs nothing installed; a Redis Streams
+backend swaps in by environment variable. A slow or broken console must not
+stall a live call, so a subscriber whose queue is full loses its oldest events
+rather than applying backpressure to the triage path. Drops are counted and
+logged; a console that has fallen behind shows a gap rather than stale state.
+
+`RedisBus` is deliberately not unit-tested: this environment has no Redis, and
+a test that mocks the client would assert only that we call our own functions.
+It is integration-tested against a real server at deployment.
+
+## D39 — The SVI is recomputed after every new piece of information
+Not once at the end. A caller who becomes more distressed as they describe what
+happened looks different from one who was distressed from the first word, and
+only a trajectory shows that. Snapshots are append-only so the console can
+render the movement.
+
+Actions, by contrast, are raised on tier change only. A twenty-minute call must
+not generate the same DySP intimation forty times.
+
+## D40 — The API exposes no raw audio, transcript or caller identifier
+Nothing in the console needs them, and an endpoint that can serve them is an
+endpoint that can leak them. There is also no endpoint that sets a tier
+directly: a tier is reached by assessment or by a recorded override carrying a
+stated reason of at least ten characters. Both absences are asserted by tests,
+because an absence nobody checks tends not to stay absent.
+
+Authentication is deliberately not invented here. This runs behind the
+ministry's existing gateway and identity provider; a hand-rolled auth scheme in
+a hackathon repository would be worse than none because it would look like the
+problem was solved. `require_operator` is the single integration point.
+
+## D41 — The crisis path outranks retention and referral consent (2026-08-29)
+Analysis consent cannot wait: without it nothing may be assessed at all. The
+remaining scopes can. Asking someone who has just disclosed suicidal intent
+whether we may keep their data — before administering the suicide screener — is
+indefensible, and the original ordering did exactly that.
+
+Found by an API test whose `next_action` was asking for retention consent
+immediately after a self-harm disclosure. The test was written to check
+something else; the ordering flaw it exposed is more important than the
+assertion that found it.
+
+## D42 — Readiness is an endpoint, not a paragraph
+`GET /readiness` reports whether this build may take live calls and names every
+blocker, and the service logs the same verdict loudly at every start. A
+deployment blocker visible only in a document nobody opens is not a blocker.

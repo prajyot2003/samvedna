@@ -235,15 +235,13 @@ class IntakeAgent:
     def next_action(self, state: IntakeState) -> AgentAction:
         lang = state.language
 
-        # Rule 1 — consent before anything.
-        for scope in self.CONSENT_ORDER:
-            if scope.value not in state.consent:
-                if scope is not ConsentScope.ANALYSIS and not state.analysis_granted():
-                    break
-                return AgentAction(
-                    ActionKind.ASK_CONSENT, S.CONSENT_PROMPTS[scope.value][lang.value],
-                    lang, scope=scope,
-                    rationale=f"consent required for '{scope.value}' before proceeding")
+        # Rule 1 — analysis consent before anything is analysed.
+        if ConsentScope.ANALYSIS.value not in state.consent:
+            return AgentAction(
+                ActionKind.ASK_CONSENT,
+                S.CONSENT_PROMPTS[ConsentScope.ANALYSIS.value][lang.value],
+                lang, scope=ConsentScope.ANALYSIS,
+                rationale="analysis consent required before anything is assessed")
 
         if state.phase is Phase.PASSIVE or not state.analysis_granted():
             return AgentAction(
@@ -267,6 +265,21 @@ class IntakeAgent:
                 ActionKind.CRISIS_HANDOVER, S.CRISIS_HANDOVER_PROMPT[lang.value], lang,
                 rationale="crisis screen complete; live handover to a counsellor "
                           "before the call ends")
+
+        # The remaining consent scopes are sought only after the crisis path
+        # above has been cleared. Retention and referral consent matter, but
+        # asking someone who has just disclosed suicidal intent whether we may
+        # keep their data — before administering the suicide screener — is
+        # indefensible. Analysis consent is the one that cannot wait, because
+        # without it nothing may be assessed at all.
+        for scope in self.CONSENT_ORDER:
+            if scope is ConsentScope.ANALYSIS or scope.value in state.consent:
+                continue
+            return AgentAction(
+                ActionKind.ASK_CONSENT, S.CONSENT_PROMPTS[scope.value][lang.value],
+                lang, scope=scope,
+                rationale=f"consent required for '{scope.value}' before "
+                          f"{'retaining derived data' if scope is ConsentScope.RETENTION else 'referring to other services'}")
 
         if not state.narrative_given:
             return AgentAction(ActionKind.OPEN_NARRATIVE, S.OPENING_PROMPT[lang.value],

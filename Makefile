@@ -1,4 +1,14 @@
-.PHONY: test test-verbose test-asr verify-audit purge fetch-models validate-asr reference-server clean
+.PHONY: test test-verbose test-asr dev readiness verify-audit purge fetch-models validate-asr reference-server clean
+
+# Runs the whole pipeline on SQLite with an in-process bus: no services needed.
+dev:
+	python3 scripts/run_api.py
+
+# Whether this build may take live calls, and why not.
+readiness:
+	python3 -c "from services.nlp.lexicon import production_ready; \
+	ok, b = production_ready(); print('production ready:', ok); \
+	[print('  BLOCKER', x) for x in b]"
 
 test:
 	python3 -m pytest tests/ -q

@@ -409,3 +409,32 @@ def test_the_handover_repeats_until_a_counsellor_actually_takes_the_call(agent):
 def test_handover_cannot_be_recorded_when_no_crisis_is_in_progress(agent):
     with pytest.raises(ValueError):
         agent.record_crisis_handover(consented(agent))
+
+
+def test_a_crisis_disclosure_outranks_the_remaining_consent_questions(agent):
+    """Analysis consent cannot wait — nothing may be assessed without it. But
+    asking someone who has just disclosed suicidal intent whether we may retain
+    their data, before administering the suicide screener, is indefensible."""
+    state = IntakeState()
+    agent.record_consent(state, ConsentScope.ANALYSIS, ConsentDecision.GRANTED)
+    assert agent.next_action(state).scope is ConsentScope.RETENTION
+
+    text = "अब और नहीं सह सकता, मैं मर जाऊँगा"
+    agent.ingest_narrative(state, extract(text, Language.HINDI),
+                           analyse(text, Language.HINDI))
+
+    action = agent.next_action(state)
+    assert action.kind is ActionKind.ASK_SCREENER
+    assert action.instrument is Instrument.CSSRS
+
+
+def test_remaining_consent_is_still_sought_once_the_crisis_path_clears(agent):
+    state = IntakeState()
+    agent.record_consent(state, ConsentScope.ANALYSIS, ConsentDecision.GRANTED)
+    text = "मैं मर जाऊँगा"
+    agent.ingest_narrative(state, extract(text, Language.HINDI),
+                           analyse(text, Language.HINDI))
+    for i in range(len(S.CSSRS_ITEMS)):
+        agent.record_screener(state, Instrument.CSSRS, i, False)
+    agent.record_crisis_handover(state)
+    assert agent.next_action(state).scope is ConsentScope.RETENTION
