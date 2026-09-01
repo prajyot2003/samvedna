@@ -2,104 +2,143 @@
 
 **S**peech **A**nd **M**ultilingual **V**ulnerability **E**valuation for **D**istress & **N**eed **A**ssessment
 
-An AI-assisted structured triage system for the National Helpline Against Atrocities
+AI-assisted structured triage for the National Helpline Against Atrocities
 (NHAA, 14566) and the Integrated Portal of the Department of Social Justice &
 Empowerment.
 
 > Smart India Hackathon — Problem Statement **26093**
 > Ministry of Social Justice and Empowerment (MoSJE)
 
----
-
-## 1. What this system is
-
-SAMVEDNA assesses the psychological stress, trauma, fear, anxiety and vulnerability
-of victims and complainants at their **first point of contact** with the helpline
-ecosystem, and converts that assessment into a **specific, statutorily-grounded
-action packet** that a counsellor, district nodal officer or police officer can act on.
-
-It produces a **Stress Vulnerability Index (SVI)** on a 0–100 scale, places every
-interaction into one of four risk tiers — **Low / Moderate / High / Critical** — and
-emits the referrals that tier warrants under the SC/ST (Prevention of Atrocities)
-Act 1989 and its 1995 Rules.
-
-### What this system is NOT
-
-This is stated first, deliberately, because it governs every design decision below.
-
-- **It does not diagnose.** It performs screening and triage. No output of this
-  system is a clinical diagnosis, and no output may be recorded as one.
-- **It does not decide.** Every recommendation is advisory. A human counsellor
-  can override any score, and the override is what enters the record.
-- **It does not replace counselling.** It is a triage and routing layer. Actual
-  mental health support is handed off to Tele-MANAS (14416); legal aid to
-  NALSA/DLSA; protection to the machinery of the PoA Act.
-- **It never uses caste as a model feature.** Caste appears in the case record
-  because the statute requires it. It is walled off from every scoring pathway.
-
-The formal framing is **AI-assisted structured professional judgement**: the system
-converts an unstructured first contact into a structured, auditable risk profile so
-that a human decides faster and misses fewer critical cases.
+**Status: not cleared for live calls.** The system reports this itself at
+`GET /readiness` and logs it at every start. See [Readiness](#readiness).
 
 ---
 
-## 2. The core design principle
+## What this is
 
-The SVI is **not** a single model output. It is a three-channel composite in which
-the machine-learned component is deliberately the *least* authoritative channel.
+It converts an unstructured first contact into a structured, auditable risk
+profile, and maps that profile onto the entitlements the SC/ST (Prevention of
+Atrocities) Act already provides.
 
-| Channel | Source | Role | Weight |
+It produces a **Stress Vulnerability Index** on 0–100, places the interaction in
+one of four tiers — Low, Moderate, High, Critical — and emits an action packet
+in which every recommendation names its owner, its deadline, and the statutory
+provision it rests on.
+
+## What this is not
+
+Stated first, deliberately, because it governs every design decision below.
+
+- **It does not diagnose.** It screens and triages. No output is a clinical
+  diagnosis and none may be recorded as one.
+- **It does not decide.** Every recommendation is advisory. A counsellor can
+  override any tier, and the override is what enters the record.
+- **It does not detect emotions.** It reports acoustic and linguistic
+  *indicators* — pauses, pitch variability, distress vocabulary — and never
+  asserts that a caller feels a particular way.
+- **It does not use caste as a feature.** Caste is in the case record because
+  the statute requires it. It is walled off from every scoring path.
+
+The formal framing is **AI-assisted structured professional judgement**: the
+system makes a human decide faster and miss fewer critical cases. It does not
+decide for them.
+
+---
+
+## Quick start
+
+Requires Python 3.10+ and Node 18+. Development runs on SQLite with an
+in-process event bus, so the whole pipeline works on a laptop with no services
+installed.
+
+```bash
+pip install -r requirements.txt
+make dev                       # API on :8000, docs at /docs
+
+cd web && npm install && npm run dev    # console on :5173
+```
+
+Useful targets:
+
+| Command | What it does |
+|---|---|
+| `make test` | 266 tests |
+| `make readiness` | whether this build may take live calls, and why not |
+| `make verify-audit` | re-walks the audit ledger, recomputing every hash |
+| `make evidence` | regenerates the fairness report, prints the blockers |
+| `make fetch-models` | downloads Whisper weights (needs internet) |
+| `make validate-asr` | measures the dialect gap on real recordings |
+| `make reference-server` | serves the Bhashini ULCA contract locally |
+
+Production swaps SQLite and the in-process bus for PostgreSQL and Redis by
+environment variable. The application code is identical.
+
+---
+
+## How the score works
+
+The SVI is **not** a single model output. It is a three-channel composite in
+which the machine-learned component is deliberately the *least* authoritative.
+
+| Channel | Source | Nature | Weight |
 |---|---|---|---|
-| **A — Structured context** | Objective risk factors established during the interaction (offence category, accused proximity, prior threats, social boycott, displacement, sole earner lost, minor/pregnant/disabled victim, FIR status…) | Deterministic scored checklist | 0.55 of base |
-| **B — Clinical micro-screen** | Validated instruments administered conversationally: PC-PTSD-5, PHQ-2→PHQ-9, GAD-2→GAD-7, C-SSRS screener | Deterministic instrument scoring | 0.45 of base |
-| **C — Passive AI signals** | Acoustic prosody (eGeMAPS), conversational dynamics, multilingual text classification of the narrative | **Modulator only** — bounded, confidence-gated | 0 to +25 points |
+| **A — Context** | 18 weighted risk factors + graded offence severity | Deterministic checklist | 0.55 of base |
+| **B — Screening** | PC-PTSD-5, PHQ-2→9, GAD-2→7, functional impairment | Deterministic instrument scoring | 0.45 of base |
+| **C — Speech & language** | eGeMAPS prosody, conversational timing, crisis lexicon | **Baseline, not trained** | 0 to +25, capped |
 
-Three invariants are enforced in code and covered by tests:
+```
+SVI = clamp(100 × (0.55·A + 0.45·B) + C_delta, floor = base)
+```
 
-1. **Fail-safe monotonicity.** Channel C can only ever *raise* the score. It can
-   never pull an interaction below the floor established by Channels A and B.
-2. **Asymmetric abstention.** When ASR confidence or audio quality is low, Channel C
-   is zeroed *and* the floor is raised, routing the case to human review. Uncertainty
+### Three invariants, enforced in code and covered by tests
+
+1. **Fail-safe monotonicity.** Channel C can raise a score. It can never lower
+   one below the floor set by A and B.
+2. **Asymmetric abstention.** Poor audio, low recognition confidence, or thin
+   coverage zeroes Channel C *and* raises the tier by one. Uncertainty
    escalates; it never de-escalates.
-3. **Rules override models.** A separate deterministic safety layer runs *after*
-   the SVI and can force `CRITICAL` regardless of any score — for C-SSRS positives
-   on ideation with intent, explicit self-harm language, imminent-violence
-   indicators, or sexual offences against a minor. No ML model is consulted for
-   these decisions.
+3. **Rules override models.** A separate deterministic layer runs *after* the
+   score and can force Critical with no model consulted.
 
-### Why this matters
+### The C-SSRS never enters the score
 
-ASR word-error-rate is systematically worse for rural, low-resource dialects —
-Gondi, Santali, Bhojpuri, Chhattisgarhi. Those are disproportionately the speakers
-this Act exists to protect. A naive pipeline gives the most marginalised victims the
-least accurate transcripts and therefore *under-triages* them. That is algorithmic
-caste bias, and it is the specific failure mode of this problem domain.
+Suicidality is handled categorically by the rules layer, never averaged.
+Averaging would let active intent be diluted by low scores elsewhere — a caller
+with intent but otherwise flat affect could land in Moderate. The C-SSRS
+screener is administered in **every** interaction, unconditionally.
 
-Asymmetric abstention is the mitigation. Per-language, per-dialect recall on the
-Critical class is reported as a first-class metric — in the product, not only in
-the paperwork.
+### Why any of this matters
+
+Recognition accuracy is systematically worse for rural, low-resource dialects —
+Gondi, Santali, Bhojpuri, Chhattisgarhi. Those are disproportionately the
+speakers this Act exists to protect. A naive pipeline gives the most
+marginalised victims the least accurate transcripts and therefore
+*under-triages* them.
+
+Asymmetric abstention is the mitigation, and per-language Critical-class recall
+is reported in the product, not only in the paperwork.
 
 ---
 
-## 3. Architecture
+## Architecture
 
-One interaction bus, four front doors, one triage brain. Every channel normalises
-into the same typed event stream; the triage engine is channel-agnostic.
+One interaction bus, four front doors. Every channel normalises into the same
+typed event stream, so the triage engine never learns which door an interaction
+came through.
 
 ```
   IVRS / telephony ─┐
-  Web portal (text) ─┤
-  Chatbot           ─┼──▶ Consent Gate ──▶ Interaction Bus (events)
+  Web portal        ─┤
+  Chatbot           ─┼──▶ Consent Gate ──▶ Interaction Bus
   Mobile app        ─┘                            │
                                                   ▼
               ┌───────────────┬───────────────┬───────────────┐
               │ ASR + VAD     │ Acoustic FE   │ Intake Agent  │
-              │ (Bhashini /   │ (openSMILE    │ (slot &       │
-              │  Whisper)     │  eGeMAPS)     │  screener DM) │
+              │ Bhashini /    │ openSMILE     │ slots &       │
+              │ Whisper       │ eGeMAPS       │ screeners     │
               └───────┬───────┴───────┬───────┴───────┬───────┘
                       ▼               ▼               ▼
                  Lexical FE      Channel C        Channels A + B
-                 (MuRIL)         signals          facts + screeners
                       └───────────────┴───────────────┘
                                       ▼
                          ┌────────────────────────┐
@@ -118,196 +157,174 @@ into the same typed event stream; the triage engine is channel-agnostic.
    (live, WebSocket)         (caseload, SLA, fairness)   (hash-chained)
 ```
 
-### Repository layout
+### Layout
 
 ```
-samvedna/
-├── core/                      no I/O, fully unit-tested, the auditable heart
-│   ├── events.py              typed event schema crossing every boundary
-│   ├── svi/
-│   │   ├── factors.py         Channel A risk-factor table and weights
-│   │   ├── instruments.py     PHQ / GAD / PC-PTSD-5 / C-SSRS scoring
-│   │   └── engine.py          compute_svi() — pure, deterministic
-│   ├── rules/
-│   │   ├── hard_rules.py      escalate-only safety overrides
-│   │   └── lexicons/          per-language crisis lexicons (human-reviewed)
-│   └── actions/
-│       ├── entitlements.json  statute → action → owner → SLA
-│       └── orchestrator.py
-├── services/
-│   ├── ingest/                channel adapters, consent gate
-│   ├── asr/                   Bhashini client + local Whisper backend
-│   ├── acoustic/              openSMILE eGeMAPS + VAD + quality gate
-│   ├── nlp/                   fact extraction, distress classifier, PII redaction
-│   ├── intake/                dialog manager, slot schedule
-│   └── api/                   FastAPI app, WebSocket, REST
-├── web/                       React counsellor console + district dashboard
-├── evidence/                  model card, DPIA, fairness report, pilot protocol
-├── data/                      corpora build scripts (no PII, no raw audio in git)
-└── tests/
+core/            no I/O, standard library only, fully unit-tested
+  events.py      typed event schema crossing every boundary
+  svi/           Channel A factors, Channel B instruments, the engine
+  rules/         escalate-only safety layer + per-language crisis rules
+  actions/       statute → action → owner → SLA, as reviewable data
+  audit.py       the hash chain
+services/
+  audio/         telephony simulation, VAD, quality gate, eGeMAPS
+  asr/           Bhashini client, local Whisper, router, reference server
+  nlp/           redaction, crisis lexicons, fact extraction, distress baseline
+  intake/        the interview: slot schedule and dialog policy
+  store/         SQLAlchemy models and the repository
+  api/           FastAPI, REST + WebSocket
+web/             React console and district dashboard
+evidence/        model card, DPIA, clinical basis, fairness, pilot protocol
 ```
 
----
-
-## 4. What is real, and what is an integration boundary
-
-This project contains no mock data paths and no simulated scoring. Audio capture,
-ASR, feature extraction, NLP, the SVI engine, the safety rules, persistence, the
-audit chain and both consoles are fully implemented and run end to end.
-
-Three interfaces cannot be connected from outside the ministry because they require
-credentials and network access that are issued to government operators only:
-
-| Interface | Status | How it is handled |
-|---|---|---|
-| **Tele-MANAS (14416) warm transfer** | Requires NHM operator credentials | Real client implementing the documented SIP REFER / REST handoff contract, pointed at a local reference endpoint that implements the same interface |
-| **NHAA 14566 telephony trunk** | Requires a licensed SIP trunk | Asterisk/ARI adapter is real and works against any SIP provider; a WebRTC browser source is provided for local operation |
-| **Integrated Portal case API** | Requires NIC credentials | Real HTTP client against the published case-creation schema, with a local reference server |
-
-These are integration boundaries, not stubs: the request payloads, retry semantics
-and error handling are production code. Swapping the base URL and credentials is
-the entire remaining work. Each is documented in `evidence/INTEGRATION.md`.
+`core/` has **no third-party dependencies at all**. The part of the system that
+decides a risk tier should be auditable without trusting our dependency tree,
+and no library upgrade should be able to change a score.
 
 ---
 
-## 5. Privacy, consent and ethics
+## Languages
 
-Handling data about victims of caste atrocities is the most sensitive category of
-personal data recognised under the **Digital Personal Data Protection Act, 2023**.
-The following are architectural, not optional.
+| Language | ASR | Crisis lexicon | Screeners | Consent script |
+|---|---|---|---|---|
+| Hindi (`hi`) | Bhashini native · Whisper native | 71 terms, **unreviewed** | drafted | drafted |
+| Bhojpuri (`bho`) | Bhashini native · **Whisper substitutes Hindi** | 43 terms, **unreviewed** | drafted | drafted |
 
-- **Spoken informed consent before any analysis.** Three separate scopes —
-  `analysis`, `retention`, `referral` — captured in the caller's own language and
-  recorded as a signed consent artefact. Declining `analysis` puts the interaction
-  in passive mode: full human handling, no scoring, no penalty to the complainant.
-- **PII redaction before persistence.** Names, villages, FIR numbers and phone
-  numbers are stripped from transcripts before they reach storage or any model.
-- **Purpose limitation and retention.** Raw audio is purged on a fixed schedule;
-  only derived features and the SVI are retained. The purge itself is written to
-  the audit ledger.
-- **Tamper-evident audit ledger.** Every SVI snapshot, every override, every
-  action, every consent decision and every deletion is hash-chained. The chain is
-  independently verifiable via `GET /audit/verify`.
-- **Human override is always available** and always recorded with a reason.
-- **No third-party egress.** The system is designed to run entirely within NIC /
-  MeghRaj or on-premise infrastructure. Language services use Bhashini (MeitY);
-  models run locally. No caller data leaves government infrastructure.
-
-Governing artefacts live in `evidence/`: model card, DPIA, fairness report, clinical
-basis, and the shadow-mode pilot protocol.
+Bhojpuri is supported deliberately as the harder case. Whisper has no Bhojpuri
+token and decodes it as Hindi; that substitution is surfaced to the counsellor
+rather than hidden, and it is the direct cause of the dialect accuracy gap.
 
 ---
 
-## 6. Clinical basis
+## Readiness
 
-Channel B administers items adapted from instruments validated for brief and
-telephonic screening. They are used as **screeners**, never as diagnostic tests.
+`GET /readiness` returns this live. `make readiness` prints it.
 
-| Instrument | Domain | Items used |
-|---|---|---|
-| **PC-PTSD-5** | Post-traumatic stress | 5 |
-| **PHQ-2 → PHQ-9** | Depression (escalating) | 2, then 9 |
-| **GAD-2 → GAD-7** | Anxiety (escalating) | 2, then 7 |
-| **C-SSRS screener** | Suicidal ideation and behaviour | 6 |
-
-The C-SSRS screener is administered **unconditionally** in every interaction. It is
-never gated on a model's judgement that the caller appears well.
-
-Full citations, adaptation notes, translation provenance and clinical review
-sign-off are recorded in `evidence/CLINICAL_BASIS.md`.
-
----
-
-## 7. Statutory grounding
-
-Recommendations map to entitlements, not to generic advice. The action table in
-`core/actions/entitlements.json` encodes:
-
-- **Section 15A**, SC/ST (PoA) Act — victim and witness rights: protection, legal
-  aid, travel and maintenance allowance, right to be heard.
-- **Rule 12 and the compensation schedule**, SC/ST (PoA) Rules 1995 — relief
-  entitlement by offence category, payable in tranches at FIR, chargesheet and
-  conviction.
-- **Rule 7** — investigation by an officer not below the rank of DySP; the 60-day
-  chargesheet timeline.
-- **Section 4** — escalation where a public servant wilfully neglects duty,
-  including refusal to register an FIR.
-- **Special and Exclusive Special Courts**; District-level Vigilance and
-  Monitoring Committee.
-
----
-
-## 8. Running the system
-
-### Requirements
-
-- Python 3.10+
-- Node 18+
-- Optional: PostgreSQL 14+ and Redis 7+ for production configuration
-
-Development runs on SQLite and an in-process event bus with no external services,
-so the full pipeline works on a laptop with nothing installed. Production
-configuration swaps both via environment variables — the application code is
-identical.
-
-### Setup
-
-```bash
-git clone <repo> && cd samvedna
-make setup          # venv, python deps, node deps, model downloads
-cp .env.example .env
-make dev            # API on :8000, web console on :5173
+```
+production ready: False
+  BLOCKER  Hindi crisis lexicon (71 terms) has not been reviewed by a native speaker
+  BLOCKER  Bhojpuri crisis lexicon (43 terms) has not been reviewed by a native speaker
 ```
 
-### Verifying the install
+A system that escalates suicide risk from a word list nobody qualified has read
+is not ready to take live calls, and the code says so rather than hoping nobody
+asks. The lexicons are still *used* — for a crisis lexicon, matching on an
+unconfirmed term is safer than not matching, because every error it can make
+escalates — but the gap is visible in the console, the API and this README.
 
-```bash
-make test           # unit + integration suite
-make verify-audit   # walks and verifies the hash chain
-make fairness       # regenerates evidence/FAIRNESS.md from the eval set
-```
+**No recognition or triage accuracy is claimed anywhere in this repository.**
+Neither dataset exists yet. What is claimed is what is true: 266 automated tests
+over the scoring invariants, the safety layer, redaction, the policy table, the
+audit chain and the API.
 
 ---
 
-## 9. Build order
+## What is real, and what is a boundary
 
-The system is built core-outward: the auditable, dependency-free heart first, then
-the machinery that feeds it. Each phase leaves the system in a working state.
+Every part of the pipeline runs: audio processing, recognition routing,
+redaction, crisis detection, extraction, the interview, scoring, the safety
+layer, the entitlement mapping, persistence, the audit chain, both consoles.
 
-| Phase | Deliverable | Done when |
-|---|---|---|
-| 0 | Decisions, schema, scaffold | `core/events.py` frozen and reviewed |
-| 1 | SVI engine + instruments | `pytest tests/test_svi.py` green, invariants covered |
-| 2 | Safety rules + lexicons | C-SSRS positive forces CRITICAL with model bypassed |
-| 3 | Action orchestrator | Tier + facts resolve to owner, SLA, statutory basis |
-| 4 | Persistence + audit chain | `make verify-audit` returns green |
-| 5 | ASR + acoustic pipeline | Live microphone produces transcript and prosody |
-| 6 | NLP: extraction, classifier, redaction | Narrative populates Channel A facts |
-| 7 | Intake agent | Unscripted interaction reaches a defensible tier |
-| 8 | Counsellor console | Live SVI, contribution panel, override flow |
-| 9 | District dashboard | Caseload, SLA clocks, per-language fairness |
-| 10 | Evidence pack | Model card, DPIA, fairness, pilot protocol complete |
+Three interfaces need credentials issued only to government operators, and are
+documented in [`evidence/INTEGRATION.md`](evidence/INTEGRATION.md) with what is
+built and what remains:
 
-All ten phases are complete. 266 automated tests pass; two skip pending
-downloaded ASR weights (see §4).
+| Interface | Status |
+|---|---|
+| Tele-MANAS (14416) warm transfer | Action, SLA and repeat-until-accepted logic built; telephony leg needs NHM credentials |
+| NHAA 14566 SIP trunk | Full 8 kHz audio path built; trunk registration needs a licensed carrier |
+| Integrated Portal case API | Action packet built and auditable; write needs NIC credentials |
+| Bhashini ASR | **Real ULCA client**, tested over real HTTP against a local reference server; needs a ULCA key |
 
-## 9a. What a reviewer should read, in order
+Nothing in this repository simulates a government system and presents the
+simulation as a connection.
+
+---
+
+## Privacy
+
+Handling data about victims of caste atrocities is the most sensitive category
+recognised under the **DPDP Act 2023**. The following are architectural, not
+optional:
+
+- **Spoken consent in three separate scopes** — analysis, retention, referral —
+  captured in the caller's language and recorded in the ledger. Declining
+  analysis puts the interaction in passive mode: full human handling, no
+  scoring, and no penalty to the complainant.
+- **PII redaction before persistence**, with a guard at the storage boundary
+  that raises rather than quietly cleaning.
+- **Bounded retention.** Raw audio is isolated so purges never touch the case
+  record, and each purge is itself an audited event.
+- **A tamper-evident ledger.** Every snapshot, rule trigger, override, action,
+  consent decision and deletion is hash-chained and independently verifiable.
+- **No third-party egress.** Language services use Bhashini (MeitY); models run
+  locally; the console loads nothing over the network.
+
+Full assessment, including the one declared residual gap in redaction:
+[`evidence/DPIA.md`](evidence/DPIA.md).
+
+---
+
+## Documentation
 
 | Document | What it answers |
 |---|---|
-| `evidence/MODEL_CARD.md` | What the system does, how the score is made, what it cannot do, what is unmeasured |
-| `evidence/DPIA.md` | Lawful basis, consent, minimisation, and the one declared residual gap in redaction |
-| `evidence/CLINICAL_BASIS.md` | Which instruments, why, and what has *not* been validated |
-| `evidence/FAIRNESS.md` | Generated from the database. Currently: no data, no claim |
-| `evidence/PILOT_PROTOCOL.md` | How the system earns the right to make an accuracy claim, and the rules that halt it |
-| `evidence/INTEGRATION.md` | The three government interfaces, what is built and what remains |
-| `DECISIONS.md` | Fifty frozen decisions with the reasoning, including the ones found by failing tests |
+| [`evidence/MODEL_CARD.md`](evidence/MODEL_CARD.md) | What it does, how the score is made, what it cannot do, what is unmeasured |
+| [`evidence/DPIA.md`](evidence/DPIA.md) | Lawful basis, consent, minimisation, residual risks |
+| [`evidence/CLINICAL_BASIS.md`](evidence/CLINICAL_BASIS.md) | Which instruments, why, and what has **not** been validated |
+| [`evidence/FAIRNESS.md`](evidence/FAIRNESS.md) | Generated from the database. Currently: no data, no claim |
+| [`evidence/PILOT_PROTOCOL.md`](evidence/PILOT_PROTOCOL.md) | How the system earns an accuracy claim, and the rules that halt it |
+| [`evidence/INTEGRATION.md`](evidence/INTEGRATION.md) | The government interfaces, built and remaining |
+| [`DECISIONS.md`](DECISIONS.md) | 50 frozen decisions with their reasoning |
 
-`make evidence` regenerates the fairness report and prints the readiness verdict.
+`DECISIONS.md` is the most useful file for a reviewer. Several entries record
+defects that failing tests found rather than choices made in advance — a feature
+extractor reporting `0.0` where silence should have been absent, so silence
+looked like a perfectly calm voice; an agent that would have asked *"may we keep
+your data?"* before the suicide screener after a self-harm disclosure.
 
 ---
 
-## 10. Licence and use
+## Testing
+
+```bash
+make test          # 266 pass, 2 skip pending downloaded ASR weights
+```
+
+Tests are written as the claims the project makes, not as coverage. If one goes
+red, a claim has stopped being true. The ones that carry the most weight:
+
+- `test_cssrs_intent_forces_critical_from_the_lowest_possible_case` — every
+  other answer is as calm as it can be, the score says Low, the rule says
+  Critical.
+- `test_degraded_audio_escalates_the_assessment_rather_than_calming_it` — real
+  waveforms through the real telephony channel; identical facts, worse line,
+  and the assessment escalates.
+- `test_a_gap_without_compensating_abstention_halts_the_pilot` — the fairness
+  failure the whole design exists to catch.
+- `test_deleting_a_stored_row_breaks_verification` — tamper detection against a
+  real database.
+
+---
+
+## What still needs doing
+
+Contributions most useful, in order:
+
+1. **Native-speaker review of the crisis lexicons** (`services/nlp/lexicons/`).
+   The top deployment blocker. Ideally counsellors who take these calls. Do not
+   extend the Bhojpuri file by translating the Hindi one — the whole reason they
+   are separate is that the idioms differ, and a mistranslated idiom of suicidal
+   intent is a missed case.
+2. **Real recorded speech** in `data/validation/`, then `make validate-asr`, to
+   measure the Hindi–Bhojpuri gap. No accuracy claim exists until it does.
+3. **Clinician sign-off** on the screener translations and the C-SSRS protocol.
+4. **Named-entity redaction** for Hindi and Bhojpuri, registered at the
+   `NamedEntityRedactor` interface.
+
+---
+
+## Provenance and use
 
 Built for the Ministry of Social Justice and Empowerment under Smart India
 Hackathon PS 26093.
@@ -315,3 +332,6 @@ Hackathon PS 26093.
 This system is intended for operation by trained helpline counsellors and
 authorised officers. It must not be deployed in an autonomous configuration, and
 must not be represented to any complainant as a clinical or diagnostic service.
+
+No open-source licence is attached, deliberately: a permissive licence would sit
+awkwardly beside those conditions while the clinical review is still outstanding.
