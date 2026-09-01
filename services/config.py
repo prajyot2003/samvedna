@@ -27,5 +27,18 @@ class Settings:
 
     echo_sql: bool = os.environ.get("SAMVEDNA_ECHO_SQL", "").lower() in {"1", "true"}
 
+    # Browser origins permitted to call this service. A wildcard on a service
+    # that handles victim disclosures is not a default anyone should inherit,
+    # so the default is the local development console and nothing else — a
+    # deployed backend refuses browser traffic until an origin is named.
+    allowed_origins: tuple = tuple(
+        o.strip() for o in os.environ.get(
+            "SAMVEDNA_ALLOWED_ORIGINS",
+            "http://localhost:5173,http://127.0.0.1:5173").split(",") if o.strip())
+
+    # Renders a permanent banner in the console. Set on every deployment that is
+    # not a cleared production instance, which today is all of them.
+    demo_banner: bool = os.environ.get("SAMVEDNA_DEMO_BANNER", "").lower() in {"1", "true"}
+
 
 SETTINGS = Settings()

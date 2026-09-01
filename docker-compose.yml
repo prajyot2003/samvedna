@@ -1,0 +1,36 @@
+# Local production-shaped stack: Postgres instead of SQLite, so the audit
+# chain's UNIQUE(seq) concurrency control is exercised the way it will be in
+# deployment rather than only under SQLite's single-writer behaviour.
+#
+# `make dev` remains the zero-dependency path. This is for testing the
+# deployment shape before pushing it anywhere.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: samvedna
+      POSTGRES_PASSWORD: samvedna_local_only
+      POSTGRES_DB: samvedna
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U samvedna"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SAMVEDNA_DATABASE_URL: postgresql+psycopg://samvedna:samvedna_local_only@db:5432/samvedna
+      SAMVEDNA_ALLOWED_ORIGINS: "http://localhost:5173"
+      SAMVEDNA_DEMO_BANNER: "1"
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdata:

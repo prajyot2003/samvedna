@@ -352,3 +352,19 @@ def test_a_tier_cannot_be_set_without_an_override_record(client):
     assessment or by a recorded override with a stated reason."""
     paths = [r.path for r in client.app.routes]
     assert not any(p.endswith("/tier") for p in paths)
+
+
+# ------------------------------------------------- deployment posture
+
+def test_cors_does_not_default_to_a_wildcard():
+    """A service handling victim disclosures must not accept browser calls from
+    anywhere by default. A deployed backend refuses browser traffic until an
+    origin is named."""
+    from services.config import SETTINGS
+    assert "*" not in SETTINGS.allowed_origins
+    assert all(o.startswith(("http://localhost", "http://127.0.0.1"))
+               for o in SETTINGS.allowed_origins)
+
+
+def test_health_reports_whether_this_instance_is_a_demo(client):
+    assert "demo_banner" in client.get("/health").json()

@@ -118,8 +118,14 @@ def create_app(repo: Optional[Repository] = None, bus=None,
                   description="AI-assisted structured triage for NHAA 14566. "
                               "Screening and decision support; not a diagnostic "
                               "service.")
-    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"],
-                       allow_headers=["*"])
+    # Named origins only. `allow_credentials` stays off: the operator identity
+    # arrives in a header set by the gateway, not in a cookie, so there is
+    # nothing for a cross-site request to ride on.
+    app.add_middleware(CORSMiddleware,
+                       allow_origins=list(SETTINGS.allowed_origins),
+                       allow_credentials=False,
+                       allow_methods=["GET", "POST"],
+                       allow_headers=["Content-Type", "X-Operator-Id"])
 
     pipeline = TriagePipeline(repo, bus, asr_router=asr_router,
                               prosody_extractor=prosody_extractor)
@@ -156,6 +162,7 @@ def create_app(repo: Optional[Repository] = None, bus=None,
             "database": SETTINGS.database_url.split("://", 1)[0],
             "asr_configured": asr_router is not None,
             "prosody_configured": prosody_extractor is not None,
+            "demo_banner": SETTINGS.demo_banner,
         }
 
     @app.get("/readiness")

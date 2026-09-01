@@ -1,0 +1,44 @@
+# Render blueprint for the backend.
+#
+# Render (or Railway, or Fly) rather than Vercel because this service needs a
+# long-lived process: native audio libraries, a held-open WebSocket, and a
+# database whose UNIQUE constraint is what keeps the audit chain from forking.
+#
+# Deploy: https://dashboard.render.com/blueprints -> New Blueprint Instance,
+# point it at github.com/prajyot2003/samvedna, apply.
+
+databases:
+  - name: samvedna-db
+    databaseName: samvedna
+    user: samvedna
+    plan: free
+
+services:
+  - type: web
+    name: samvedna-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: SAMVEDNA_DATABASE_URL
+        fromDatabase:
+          name: samvedna-db
+          property: connectionString
+      # Set this to the Vercel console URL once it exists. Leaving it unset
+      # blocks browser access entirely, which is the safe default for a service
+      # that has not been cleared for live calls.
+      - key: SAMVEDNA_ALLOWED_ORIGINS
+        sync: false
+      - key: SAMVEDNA_DEMO_BANNER
+        value: "1"
+      # Whisper weights are not baked into the image (several hundred MB) and
+      # are not fetched at boot. Without them the ASR router reports no backend
+      # and the pipeline runs text-first; the quality gate and prosody still
+      # work on uploaded audio, so the abstention behaviour remains
+      # demonstrable. Set a Bhashini key here to enable recognition.
+      - key: SAMVEDNA_BHASHINI_USER_ID
+        sync: false
+      - key: SAMVEDNA_BHASHINI_API_KEY
+        sync: false
+      - key: SAMVEDNA_BHASHINI_PIPELINE_ID
+        sync: false
