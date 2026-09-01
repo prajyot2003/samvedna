@@ -288,6 +288,23 @@ the machinery that feeds it. Each phase leaves the system in a working state.
 | 9 | District dashboard | Caseload, SLA clocks, per-language fairness |
 | 10 | Evidence pack | Model card, DPIA, fairness, pilot protocol complete |
 
+All ten phases are complete. 266 automated tests pass; two skip pending
+downloaded ASR weights (see §4).
+
+## 9a. What a reviewer should read, in order
+
+| Document | What it answers |
+|---|---|
+| `evidence/MODEL_CARD.md` | What the system does, how the score is made, what it cannot do, what is unmeasured |
+| `evidence/DPIA.md` | Lawful basis, consent, minimisation, and the one declared residual gap in redaction |
+| `evidence/CLINICAL_BASIS.md` | Which instruments, why, and what has *not* been validated |
+| `evidence/FAIRNESS.md` | Generated from the database. Currently: no data, no claim |
+| `evidence/PILOT_PROTOCOL.md` | How the system earns the right to make an accuracy claim, and the rules that halt it |
+| `evidence/INTEGRATION.md` | The three government interfaces, what is built and what remains |
+| `DECISIONS.md` | Fifty frozen decisions with the reasoning, including the ones found by failing tests |
+
+`make evidence` regenerates the fairness report and prints the readiness verdict.
+
 ---
 
 ## 10. Licence and use

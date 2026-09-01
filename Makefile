@@ -1,4 +1,4 @@
-.PHONY: test test-verbose test-asr dev readiness verify-audit purge fetch-models validate-asr reference-server clean
+.PHONY: test test-verbose test-asr dev readiness fairness evidence verify-audit purge fetch-models validate-asr reference-server clean
 
 # Runs the whole pipeline on SQLite with an in-process bus: no services needed.
 dev:
@@ -32,6 +32,20 @@ validate-asr:
 # integration-tested before credentials are issued.
 reference-server:
 	python3 -m services.asr.reference_server
+
+# Regenerates evidence/FAIRNESS.md from the database. Reports "NO DATA" until
+# the shadow-mode pilot has run — which is the honest state, not a bug.
+fairness:
+	python3 scripts/fairness_report.py
+
+# Everything a reviewer should be handed.
+evidence: fairness
+	@echo
+	@ls -1 evidence/
+	@echo
+	@python3 -c "from services.nlp.lexicon import production_ready; \
+	ok, b = production_ready(); print('production ready:', ok); \
+	[print('  BLOCKER', x) for x in b]"
 
 verify-audit:
 	python3 scripts/verify_audit.py

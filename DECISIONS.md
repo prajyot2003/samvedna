@@ -390,3 +390,37 @@ Vite/rolldown bindings cannot load on Linux. Running `npm install` there would
 replace them with Linux binaries and break the build on the developer's own
 machine. Type-checking (`tsc -b`) runs fine in either place and is what CI uses
 here; `npm run build` runs on the developer machine.
+
+## D48 — The fairness report is generated, never written (2026-08-29)
+`scripts/fairness_report.py` produces `evidence/FAIRNESS.md` from the database.
+A report composed by hand reports what its author believed; this one reports
+what was measured, and when nothing has been measured it says
+"NO DATA. Nothing has been measured." rather than producing plausible-looking
+zeroes. A test asserts that the empty report contains no numeric rate at all.
+
+Three properties it enforces:
+
+- **The gold label is the counsellor's tier**, not the system's. Where a
+  counsellor overrode, the override is the label. The question is not whether
+  the model agrees with itself.
+- **Samples below 30 are flagged and excluded from the gap calculation.** A rate
+  from four cases is noise wearing a percentage sign.
+- **Abstention is reported beside recall.** A language with lower recall and a
+  correspondingly higher abstention rate is behaving as designed; one with lower
+  recall and no lift in abstention is failing those callers silently, and the
+  report says the pilot halts.
+
+## D49 — No accuracy is claimed anywhere in the evidence pack
+The model card states plainly that no recognition or triage accuracy has been
+measured, because neither dataset exists yet. What is claimed is what is true:
+256 automated tests covering the scoring invariants, the safety layer,
+redaction, the policy table, the audit chain and the API.
+
+The headline metric, when it exists, will be sensitivity on the Critical class
+rather than accuracy, with precision explicitly not optimised.
+
+## D50 — Integration boundaries are documented as scope lines, not discovered
+`evidence/INTEGRATION.md` names each of the three interfaces that need
+government credentials, and for each one states what is built, what is not, and
+what remains. Nothing in this repository simulates a government system and
+presents the simulation as a connection.
