@@ -1,0 +1,110 @@
+/*
+ * Design tokens.
+ *
+ * NO WEB FONTS AND NO CDN, anywhere in this application. A district office may
+ * have no usable internet, and a console whose typography or icons arrive over
+ * the network is a console that degrades exactly where it is needed most.
+ * Everything here ships in the bundle.
+ *
+ * Semantic tier colour is separate from the interface accent, so the four risk
+ * tiers never compete with ordinary UI chrome for attention. Tier is also
+ * carried by a shape — a stripe and a dot — not by colour alone, because
+ * roughly one in twelve men has a colour vision deficiency and a helpline
+ * console is not a place to encode critical state in hue.
+ */
+
+:root {
+  --ink: #14181f;
+  --ink-soft: #3d4653;
+  --muted: #6b7686;
+  --line: #dde2ea;
+  --line-soft: #eaeef4;
+  --surface: #ffffff;
+  --surface-2: #f5f7fa;
+  --paper: #eef1f6;
+
+  --accent: #1f3a6e;
+  --accent-soft: #e8edf7;
+
+  --tier-low: #2e7d62;
+  --tier-low-bg: #e7f3ee;
+  --tier-moderate: #8a6412;
+  --tier-moderate-bg: #f8f0dc;
+  --tier-high: #b4551f;
+  --tier-high-bg: #fbeadf;
+  --tier-critical: #a01f33;
+  --tier-critical-bg: #fbe4e8;
+
+  --warn: #8a6412;
+  --warn-bg: #f8f0dc;
+
+  --radius: 3px;
+  --shadow: 0 1px 2px rgba(20, 24, 31, .06), 0 8px 24px -18px rgba(20, 24, 31, .3);
+
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  /* Devanagari needs an explicit stack: the default system font on some Linux
+     desktops has no coverage and silently renders tofu. */
+  --deva: "Noto Sans Devanagari", "Nirmala UI", "Kohinoor Devanagari",
+          "Mangal", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.deva { font-family: var(--deva); }
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: .45rem .8rem;
+}
+button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.primary {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+button.primary:hover:not(:disabled) { filter: brightness(1.12); color: #fff; }
+
+input, textarea, select {
+  font: inherit; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: .45rem .6rem;
+  width: 100%;
+}
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.lbl {
+  font-family: var(--mono);
+  font-size: .66rem;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.num { font-variant-numeric: tabular-nums; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

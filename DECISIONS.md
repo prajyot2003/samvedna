@@ -352,3 +352,41 @@ assertion that found it.
 `GET /readiness` reports whether this build may take live calls and names every
 blocker, and the service logs the same verdict loudly at every start. A
 deployment blocker visible only in a document nobody opens is not a blocker.
+
+## D43 — No web fonts, no CDN, nothing over the network in the console (2026-08-29)
+A district office may have no usable internet, and a console whose typography,
+icons or scripts arrive over the network degrades exactly where it is needed
+most. Everything ships in the bundle. Asserted by inspection: the only external
+URLs in the source are XML namespace identifiers.
+
+Devanagari gets an explicit font stack (`--deva`), because the default system
+font on some Linux desktops has no coverage and silently renders tofu — a
+counsellor reading boxes instead of a transcript is a failure mode nobody
+notices in testing on a Mac.
+
+## D44 — Tier is carried by shape as well as colour
+A filled dot and a left stripe accompany every tier colour. Roughly one man in
+twelve has a colour vision deficiency, and a helpline console is not a place to
+encode critical state in hue alone. Semantic tier colour is also kept separate
+from the interface accent so the four tiers never compete with ordinary chrome
+for attention.
+
+## D45 — The console renders one server-owned payload
+State comes from the REST response after each action; the WebSocket exists to
+pick up changes this console did not cause — another operator's override, a
+transcript arriving from the IVRS leg — and triggers a re-read rather than
+merging events client-side. Two sources of truth would let the screen drift out
+of step with the record, and the record is what the audit ledger holds.
+
+## D46 — Every number on screen is shown with its reason
+The SVI never appears without the contribution list beneath it, the abstention
+banner names what was incomplete, the rule banner says which provision fired,
+and every action row carries its statutory basis. A number with no explanation
+trains a counsellor either to obey it or to ignore it, and both are failures.
+
+## D47 — node_modules is not rebuilt in the Linux workspace
+The desktop workspace mounts the developer's macOS `node_modules`, whose native
+Vite/rolldown bindings cannot load on Linux. Running `npm install` there would
+replace them with Linux binaries and break the build on the developer's own
+machine. Type-checking (`tsc -b`) runs fine in either place and is what CI uses
+here; `npm run build` runs on the developer machine.
