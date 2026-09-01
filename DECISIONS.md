@@ -248,3 +248,57 @@ answering", "reduced variation in pitch", "distress language (fear, isolation)"
 — and never an emotion label. Claiming to detect that a caller *is* afraid is
 both scientifically contested and outside what this system is for. A test
 asserts no emotion word appears in the explanation.
+
+## D33 — The intake agent is a dialog policy, not a generative model (2026-08-29)
+It decides the next question from explicit, inspectable state. A generative
+model deciding for itself whether to administer a suicide screener is not
+something this system will do. Four rules are enforced in `next_action` and
+covered one-to-one by tests:
+
+  1. Consent precedes analysis. Declining costs the caller nothing and the
+     interaction proceeds in passive mode with full human handling.
+  2. The C-SSRS is always administered — never conditional on a score, a model,
+     or how the caller sounds.
+  3. Crisis language interrupts everything. A self-harm indicator at any point
+     jumps straight to the suicide screener, ahead of pending confirmations and
+     all remaining risk-factor questions. Asking about land records while
+     someone discloses suicidal intent is its own kind of harm.
+  4. Facts that move a tier are read back before they count in full.
+
+The agent suggests; on live channels a counsellor asks. Every action carries a
+`rationale` shown on the console, because a prompt with no stated reason trains
+counsellors to click through without reading.
+
+## D34 — Questions are open before closed, and never leading
+The first prompt invites a narrative rather than starting a checklist: people
+disclose more in their own account, and extraction harvests it so the agent can
+confirm rather than interrogate. Prompts are neutral in the direction of the
+answer — "Is the person who did this still nearby?" and never "They are still
+nearby, aren't they?" A leading question manufactures a fact the caller did not
+assert, in the heaviest-weighted channel of the score.
+
+## D35 — Coverage counts questions put, not factors found
+`record_slot` marks a slot asked whether the answer was yes or no. A caller who
+answers "no" to everything has been thoroughly assessed; a caller who was never
+asked has not, and the abstention path must be able to tell those apart.
+
+## D36 — A crisis handover repeats until a person takes the call
+`crisis_handover_done` is set only when a counsellor has actually accepted the
+transfer, never on dialling. Until then the agent keeps returning the handover
+action. A caller who has disclosed suicidal intent is not released from the line
+because a transfer was attempted. Once accepted, the interview resumes any
+screening the crisis interrupt jumped ahead of — with the counsellor now
+present.
+
+Found while testing: nothing set that flag, so the agent would have looped.
+
+## D37 — PHQ-9 item 9 is a safety disclosure, not a score
+It asks about thoughts of self-harm, so a positive answer raises the crisis flag
+and routes to the C-SSRS exactly as narrative self-harm language does. Self-harm
+surfaces through the depression screener at least as often as through the
+narrative.
+
+A test helper originally answered every PHQ item with one blanket value,
+including item 9, and the interview correctly ended in crisis handover. The test
+data was careless and the system caught it — which is the behaviour wanted, but
+worth recording as the reason item 9 is now answered separately everywhere.
