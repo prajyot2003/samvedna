@@ -85,29 +85,30 @@ The Vercel project builds from `web/`.
 `VITE_*` variables are inlined at build time, so **changing them requires a
 redeploy**, not just a save.
 
-### Close the instance
+### Access
 
-Vercel's password protection is a Pro feature; on Hobby, Vercel Authentication
-admits only the account owner, which is no use for handing a link to judges.
+The demonstration instance is **open** — no password, no allowlist — so anyone
+given the link can try it without a credential exchange.
 
-The access control therefore lives at the API, which is the right place for it
-anyway — a CDN password protects the HTML, not the endpoint that scores
-disclosures. Set on the backend:
+What carries the weight instead is the banner. It is not dismissible, it names
+the two lexicon blockers, and it states that no accuracy has been measured. The
+readiness endpoint says the same thing to anyone who queries it. Someone who
+opens this link cannot come away thinking it is a live helpline.
+
+If a future instance needs closing — a pilot, or a link shared beyond the
+people you intended — the control exists and lives at the API rather than the
+CDN, which is the right layer: a CDN password protects the HTML, not the
+endpoint that scores disclosures.
 
 ```
 SAMVEDNA_ALLOWED_OPERATORS=judge-01,judge-02,mentor-01
 ```
 
-and build the console with `VITE_OPERATOR_ID` set to one of them. Any other
-identity, and any request without one, gets an identical 401 — a rejected
+Build the console with `VITE_OPERATOR_ID` set to one of them. Any other
+identity, and any request without one, gets a byte-identical 401 — a rejected
 caller learns nothing about which identities exist, because attribution in the
-audit ledger is the thing being protected.
-
-This is not a substitute for the ministry's gateway and is not claimed to be. It
-exists so that a demonstration instance with nothing in front of it is not an
-open triage endpoint. A publicly usable triage interface for atrocity victims,
-with no clinical sign-off and unreviewed crisis lexicons, would contradict the
-README, the readiness endpoint and the DPIA simultaneously.
+audit ledger is the thing being protected. Unset, as it is now, any non-empty
+identity is accepted.
 
 ---
 

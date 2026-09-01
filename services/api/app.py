@@ -37,6 +37,7 @@ from pydantic import BaseModel, Field, field_validator
 from core.events import (Channel, ConsentDecision, ConsentScope, Instrument, Language,
                          Tier)
 from services.bus import InProcessBus
+from services import config as _config
 from services.config import SETTINGS
 from services.nlp.lexicon import load_lexicon, production_ready
 from services.pipeline import TriagePipeline
@@ -153,7 +154,11 @@ def create_app(repo: Optional[Repository] = None, bus=None,
         """
         if not x_operator_id:
             raise HTTPException(401, "operator identity required")
-        if SETTINGS.allowed_operators and x_operator_id not in SETTINGS.allowed_operators:
+        # Read through the module rather than the name bound at import, so the
+        # setting survives a config reload and is actually testable. Binding it
+        # at import meant the allowlist silently did nothing.
+        allowed = _config.SETTINGS.allowed_operators
+        if allowed and x_operator_id not in allowed:
             # Constant message either way: an attacker learning which operator
             # identities exist is a step toward impersonating one in the audit
             # ledger, where attribution is the whole point.
