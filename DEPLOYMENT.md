@@ -1,5 +1,11 @@
 # Deployment
 
+**Console (live):** https://samvedna-tawny.vercel.app
+Vercel project `samvedna`, production target. Public, no password.
+
+Until a backend is reachable it shows a red banner saying so and computes
+nothing — which is the correct thing for it to say, not a bug.
+
 The console is served from Vercel. **The backend is not**, and the reason is
 worth stating rather than discovering:
 
@@ -111,6 +117,28 @@ audit ledger is the thing being protected. Unset, as it is now, any non-empty
 identity is accepted.
 
 ---
+
+## 2a. The laptop path — a real URL without deploying a backend
+
+For a demo where the machine is in the room, the deployed console can talk to a
+backend running on the laptop. No hosting bill, no cold starts, and the audio
+path works because openSMILE is installed locally.
+
+```bash
+SAMVEDNA_ALLOWED_ORIGINS=https://samvedna-tawny.vercel.app \
+SAMVEDNA_DEMO_BANNER=1 \
+make dev
+```
+
+Then open the Vercel URL. The console's default `VITE_API_BASE` is
+`http://127.0.0.1:8000`, so it will reach the local service.
+
+Two caveats worth knowing before you rely on it in front of judges. Chrome and
+Firefox treat `http://localhost` as trustworthy and allow the call from an HTTPS
+page; **Safari blocks it**, so demo in Chrome. And it only works on the machine
+running the backend — the URL is public, but for anyone else it shows the
+no-backend banner. For a link judges can use on their own devices, deploy the
+backend as in step 1.
 
 ## 3. Order of operations
 
