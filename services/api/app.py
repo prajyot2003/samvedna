@@ -145,8 +145,18 @@ def create_app(repo: Optional[Repository] = None, bus=None,
         Deliberately not a hand-rolled auth scheme: inventing one here would
         look like the problem was solved. In deployment this runs behind the
         existing gateway, which sets the header after authenticating.
+
+        `SAMVEDNA_ALLOWED_OPERATORS` narrows it to a fixed list. That is not a
+        substitute for the gateway and is not claimed to be — it exists so a
+        demonstration instance with nothing in front of it is not an open
+        triage endpoint.
         """
         if not x_operator_id:
+            raise HTTPException(401, "operator identity required")
+        if SETTINGS.allowed_operators and x_operator_id not in SETTINGS.allowed_operators:
+            # Constant message either way: an attacker learning which operator
+            # identities exist is a step toward impersonating one in the audit
+            # ledger, where attribution is the whole point.
             raise HTTPException(401, "operator identity required")
         return x_operator_id
 

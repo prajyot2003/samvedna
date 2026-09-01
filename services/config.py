@@ -36,6 +36,16 @@ class Settings:
             "SAMVEDNA_ALLOWED_ORIGINS",
             "http://localhost:5173,http://127.0.0.1:5173").split(",") if o.strip())
 
+    # Operator identities permitted to use this instance. Empty means any
+    # non-empty identity is accepted, which is correct behind the ministry's
+    # gateway — it authenticates, this service trusts the header it sets. On a
+    # demo instance with no gateway in front of it, setting this turns the
+    # header into a shared secret and is the difference between a link you can
+    # hand to judges and an open triage endpoint.
+    allowed_operators: tuple = tuple(
+        o.strip() for o in os.environ.get("SAMVEDNA_ALLOWED_OPERATORS", "").split(",")
+        if o.strip())
+
     # Renders a permanent banner in the console. Set on every deployment that is
     # not a cleared production instance, which today is all of them.
     demo_banner: bool = os.environ.get("SAMVEDNA_DEMO_BANNER", "").lower() in {"1", "true"}

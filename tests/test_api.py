@@ -368,3 +368,44 @@ def test_cors_does_not_default_to_a_wildcard():
 
 def test_health_reports_whether_this_instance_is_a_demo(client):
     assert "demo_banner" in client.get("/health").json()
+
+
+def test_an_operator_allowlist_can_close_a_demo_instance(tmp_path):
+    """With no gateway in front of it, the operator header is the only thing
+    between a demo link and an open triage endpoint."""
+    import services.config as config
+    from dataclasses import replace as dc_replace
+
+    original = config.SETTINGS
+    config.SETTINGS = dc_replace(original, allowed_operators=("judge-01",))
+    try:
+        repo = Repository(f"sqlite:///{tmp_path/'gated.db'}")
+        app = create_app(repo=repo, bus=InProcessBus())
+        with TestClient(app) as c:
+            assert c.post("/interactions", headers={"X-Operator-Id": "judge-01"},
+                          json={"language": "hi"}).status_code == 201
+            assert c.post("/interactions", headers={"X-Operator-Id": "someone-else"},
+                          json={"language": "hi"}).status_code == 401
+            assert c.post("/interactions", json={"language": "hi"}).status_code == 401
+    finally:
+        config.SETTINGS = original
+
+
+def test_a_rejected_operator_learns_nothing_from_the_message(tmp_path):
+    """An attacker learning which identities exist is a step toward
+    impersonating one in the audit ledger, where attribution is the point."""
+    import services.config as config
+    from dataclasses import replace as dc_replace
+
+    original = config.SETTINGS
+    config.SETTINGS = dc_replace(original, allowed_operators=("judge-01",))
+    try:
+        app = create_app(repo=Repository(f"sqlite:///{tmp_path/'g2.db'}"),
+                         bus=InProcessBus())
+        with TestClient(app) as c:
+            unknown = c.post("/interactions", headers={"X-Operator-Id": "nope"},
+                             json={"language": "hi"})
+            missing = c.post("/interactions", json={"language": "hi"})
+        assert unknown.json() == missing.json()
+    finally:
+        config.SETTINGS = original

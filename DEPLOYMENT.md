@@ -85,14 +85,29 @@ The Vercel project builds from `web/`.
 `VITE_*` variables are inlined at build time, so **changing them requires a
 redeploy**, not just a save.
 
-### Password-protect it
+### Close the instance
 
-Vercel project → **Settings → Deployment Protection → Password Protection**.
+Vercel's password protection is a Pro feature; on Hobby, Vercel Authentication
+admits only the account owner, which is no use for handing a link to judges.
 
-This is not decoration. A publicly reachable triage interface for atrocity
-victims, with no authentication and crisis lexicons nobody qualified has
-reviewed, contradicts the README, the readiness endpoint and the DPIA
-simultaneously. Judges get a link and a password; nobody can stumble into it.
+The access control therefore lives at the API, which is the right place for it
+anyway — a CDN password protects the HTML, not the endpoint that scores
+disclosures. Set on the backend:
+
+```
+SAMVEDNA_ALLOWED_OPERATORS=judge-01,judge-02,mentor-01
+```
+
+and build the console with `VITE_OPERATOR_ID` set to one of them. Any other
+identity, and any request without one, gets an identical 401 — a rejected
+caller learns nothing about which identities exist, because attribution in the
+audit ledger is the thing being protected.
+
+This is not a substitute for the ministry's gateway and is not claimed to be. It
+exists so that a demonstration instance with nothing in front of it is not an
+open triage endpoint. A publicly usable triage interface for atrocity victims,
+with no clinical sign-off and unreviewed crisis lexicons, would contradict the
+README, the readiness endpoint and the DPIA simultaneously.
 
 ---
 
