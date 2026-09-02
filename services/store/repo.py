@@ -311,6 +311,22 @@ class Repository:
                 .limit(1)
             ).scalar_one_or_none()
 
+    def snapshot_history(self, interaction_id: str, limit: int = 200) -> List[models.SVISnapshot]:
+        """Every recomputation for one interaction, oldest first.
+
+        The table is append-only for exactly this reason: a caller who becomes
+        more distressed as they describe what happened looks different from one
+        who was distressed from the first word, and only the trajectory shows
+        that. Storing it and never displaying it was a waste of the decision.
+        """
+        with self.session() as s:
+            return list(s.execute(
+                select(models.SVISnapshot)
+                .where(models.SVISnapshot.interaction_id == interaction_id)
+                .order_by(models.SVISnapshot.id)
+                .limit(limit)
+            ).scalars().all())
+
     def overdue_actions(self, now: Optional[datetime] = None) -> List[models.Action]:
         """SLA breaches, worst first. This drives the district dashboard."""
         now = now or datetime.now(timezone.utc)

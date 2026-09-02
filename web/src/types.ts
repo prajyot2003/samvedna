@@ -95,3 +95,33 @@ export interface Readiness {
     reviewed: boolean; warning: string | null;
   }>;
 }
+
+export interface HistoryPoint {
+  score: number;
+  tier: Tier;
+  computed_tier: Tier;
+  abstained: boolean;
+  model_bypassed: boolean;
+  channel_a: number;
+  channel_b: number;
+  channel_c_delta: number;
+  rules_triggered: string[];
+  at: string;
+}
+
+export interface History {
+  interaction_id: string;
+  snapshots: HistoryPoint[];
+}
+
+/** A recorded answer, kept client-side so it can be reviewed and corrected. */
+export interface AnsweredItem {
+  id: string;
+  kind: "slot" | "screener";
+  label: string;
+  answer: string;
+  slotKey?: string;
+  instrument?: string;
+  itemIndex?: number;
+  scale?: string;
+}

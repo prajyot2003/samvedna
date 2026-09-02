@@ -409,3 +409,59 @@ def test_a_rejected_operator_learns_nothing_from_the_message(tmp_path):
         assert unknown.json() == missing.json()
     finally:
         config.SETTINGS = original
+
+
+# ------------------------------------------------- assessment trajectory
+
+def test_history_returns_every_recomputation_in_order(client):
+    iid = start(client)
+    consent(client, iid)
+    for text in ("गाँव वालों ने बहिष्कार कर दिया",
+                 "पहले भी धमकी मिली है",
+                 "पुलिस ने रिपोर्ट लिखने से मना कर दिया"):
+        client.post(f"/interactions/{iid}/utterance", headers=OPERATOR,
+                    json={"text": text})
+
+    body = client.get(f"/interactions/{iid}/history", headers=OPERATOR).json()
+    snapshots = body["snapshots"]
+    assert len(snapshots) >= 3
+    assert [s["at"] for s in snapshots] == sorted(s["at"] for s in snapshots)
+    assert all("score" in s and "tier" in s for s in snapshots)
+
+
+def test_history_carries_no_transcript_or_identifiers(client):
+    """The trajectory is drawn from scores. An endpoint that also returned what
+    was said would be a second way to leak it."""
+    iid = start(client)
+    consent(client, iid)
+    client.post(f"/interactions/{iid}/utterance", headers=OPERATOR,
+                json={"text": "मेरा नाम सुनीता है, नंबर 9876543210"})
+    body = client.get(f"/interactions/{iid}/history", headers=OPERATOR).json()
+    serialised = str(body)
+    assert "सुनीता" not in serialised
+    assert "9876543210" not in serialised
+    for snapshot in body["snapshots"]:
+        assert set(snapshot) == {"score", "tier", "computed_tier", "abstained",
+                                 "model_bypassed", "channel_a", "channel_b",
+                                 "channel_c_delta", "rules_triggered", "at"}
+
+
+def test_history_requires_an_operator(client):
+    iid = start(client)
+    assert client.get(f"/interactions/{iid}/history").status_code == 401
+
+
+def test_a_rising_assessment_is_visible_in_the_trajectory(client):
+    """The point of storing every recomputation."""
+    iid = start(client)
+    consent(client, iid)
+    client.post(f"/interactions/{iid}/utterance", headers=OPERATOR,
+                json={"text": "गाँव में कुछ हुआ है"})
+    early = client.get(f"/interactions/{iid}/history", headers=OPERATOR).json()
+
+    client.post(f"/interactions/{iid}/utterance", headers=OPERATOR,
+                json={"text": "मेरे पति की हत्या कर दी, आरोपी अभी भी गाँव में ही है"})
+    later = client.get(f"/interactions/{iid}/history", headers=OPERATOR).json()
+
+    assert len(later["snapshots"]) > len(early["snapshots"])
+    assert later["snapshots"][-1]["score"] > later["snapshots"][0]["score"]

@@ -241,3 +241,155 @@ td.late, .late { color: var(--tier-critical); font-weight: 600; }
   font-family: var(--mono); font-size: .8rem;
   background: rgba(0, 0, 0, .06); padding: .05rem .3rem; border-radius: 2px;
 }
+
+/* ------------------------------------------------------------ start screen */
+
+.start-card { padding: 2rem; max-width: 32rem; }
+.start-card h1 {
+  font-size: 1.35rem; font-weight: 500; margin: .6rem 0 .4rem; line-height: 1.3;
+}
+.start-card .muted { margin: 0 0 1.3rem; }
+.language-choice { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.language-choice button {
+  display: flex; flex-direction: column; align-items: flex-start; gap: .15rem;
+  padding: .9rem 1rem; text-align: left;
+}
+.language-choice button b { font-size: 1rem; }
+.language-choice button span {
+  font-family: var(--deva); font-size: .9rem; opacity: .75;
+}
+.start-note {
+  margin: 1.3rem 0 0; padding-top: 1rem; border-top: 1px solid var(--line-soft);
+  font-size: .8rem; color: var(--muted); line-height: 1.5;
+}
+
+/* --------------------------------------------------------- narrative input */
+
+.narrative-box { padding: .9rem 1rem 1rem; }
+.narrative-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1rem; margin-bottom: .5rem;
+}
+.narrative-box textarea { min-height: 4.5rem; }
+.narrative-actions {
+  display: flex; align-items: center; gap: .7rem; margin-top: .5rem;
+  flex-wrap: wrap;
+}
+.narrative-actions .hint { font-size: .75rem; color: var(--muted); }
+.samples {
+  display: flex; flex-wrap: wrap; gap: .4rem; align-items: center;
+  padding: .6rem .7rem; margin-bottom: .6rem;
+  background: var(--surface-2); border: 1px dashed var(--line);
+  border-radius: var(--radius);
+}
+.samples .muted { flex-basis: 100%; margin: 0 0 .2rem; font-size: .75rem; }
+.samples button { font-size: .8rem; padding: .3rem .6rem; }
+.samples .lang-tag {
+  font-family: var(--mono); font-size: .62rem; margin-left: .35rem;
+  color: var(--muted); text-transform: uppercase;
+}
+.samples button.other-lang { opacity: .7; }
+.open-hint {
+  font-size: .82rem; color: var(--muted); margin: 0;
+  padding: .5rem .7rem; background: var(--surface-2);
+  border-radius: var(--radius);
+}
+
+/* -------------------------------------------------------------- audio input */
+
+.audio-input { padding: .9rem 1rem; }
+.audio-actions { display: flex; flex-wrap: wrap; gap: .45rem; margin: .5rem 0 .6rem; }
+.audio-input .hint { font-size: .75rem; color: var(--muted); margin: 0; }
+button.recording {
+  border-color: var(--tier-critical); color: var(--tier-critical);
+  background: var(--tier-critical-bg); font-variant-numeric: tabular-nums;
+}
+.rec-dot {
+  display: inline-block; width: .5rem; height: .5rem; border-radius: 50%;
+  background: var(--tier-critical); margin-right: .45rem;
+  animation: rec-pulse 1.4s ease-in-out infinite;
+}
+@keyframes rec-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+/* ---------------------------------------------------------------- progress */
+
+.progress { padding: .9rem 1rem; }
+.progress-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+}
+.progress-head .pct { font-size: 1.2rem; font-weight: 500; }
+.bars { display: flex; flex-direction: column; gap: .55rem; margin-top: .6rem; }
+.bar-label {
+  display: flex; justify-content: space-between; font-size: .78rem;
+  color: var(--ink-soft); margin-bottom: .2rem;
+}
+.track {
+  height: .35rem; background: var(--line-soft); border-radius: 999px;
+  overflow: hidden;
+}
+.track .fill { height: 100%; background: var(--accent); border-radius: 999px; }
+.progress-note {
+  margin: .7rem 0 0; font-size: .78rem; color: var(--muted);
+  padding-top: .6rem; border-top: 1px solid var(--line-soft);
+}
+.progress-note.warn { color: var(--warn); }
+
+/* -------------------------------------------------------------- trajectory */
+
+.trajectory {
+  margin-top: .9rem; padding-top: .8rem; border-top: 1px solid var(--line-soft);
+}
+.trajectory-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: .8rem; margin-bottom: .4rem;
+}
+.trajectory .delta { font-size: .76rem; color: var(--muted); }
+.trajectory .delta.up { color: var(--tier-high); font-weight: 600; }
+.trajectory .delta.down { color: var(--tier-low); }
+.spark { width: 100%; height: 3.2rem; display: block; }
+.spark .band { opacity: .16; }
+.spark .band.tier-low { fill: var(--tier-low); }
+.spark .band.tier-moderate { fill: var(--tier-moderate); }
+.spark .band.tier-high { fill: var(--tier-high); }
+.spark .band.tier-critical { fill: var(--tier-critical); }
+.spark-area { fill: var(--accent); opacity: .12; }
+.spark-line { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+.spark-end { fill: var(--accent); }
+.spark-rule { fill: var(--tier-critical); }
+.trajectory-note { font-size: .74rem; color: var(--muted); margin: .35rem 0 0; }
+
+/* ------------------------------------------------------ review & correction */
+
+.modal.answered ul, .modal.shortcuts table { width: 100%; margin: .6rem 0 0; }
+.modal.answered ul { list-style: none; padding: 0;
+                     display: flex; flex-direction: column; gap: .4rem;
+                     max-height: 22rem; overflow-y: auto; }
+.modal.answered li {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: .8rem; padding: .5rem .6rem; background: var(--surface-2);
+  border-radius: var(--radius);
+}
+.modal.answered li b { display: block; font-weight: 500; font-size: .86rem; }
+.modal.answered .given {
+  font-family: var(--mono); font-size: .74rem; color: var(--accent);
+}
+.modal.answered li button { font-size: .78rem; padding: .3rem .6rem; }
+.prompt-echo {
+  font-family: var(--deva); font-size: 1rem; margin: .5rem 0 .3rem;
+  line-height: 1.4;
+}
+.modal.shortcuts td { padding: .35rem .5rem; font-size: .84rem; }
+.modal.shortcuts td:first-child { width: 8rem; }
+
+/* --------------------------------------------------------------- responsive */
+
+@media (max-width: 720px) {
+  .console, .dashboard { padding: .8rem .7rem 2rem; }
+  .console-header { gap: .6rem; }
+  .console-header .meta { margin-left: 0; flex-wrap: wrap; }
+  .language-choice { grid-template-columns: 1fr; }
+  .console-controls { flex-wrap: wrap; }
+  .console-controls button { flex: 1 1 auto; }
+  .app-nav { flex-wrap: wrap; gap: .7rem; }
+  .app-nav .disclaimer { margin-left: 0; flex-basis: 100%; }
+}

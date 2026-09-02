@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { SVI } from "../types";
 import { TierChip } from "./TierChip";
 
@@ -22,7 +23,7 @@ function label(key: string): string {
  * ignore it, and both are failures. The contribution list is the argument the
  * system is making, in the order it weights it.
  */
-export function SVIPanel({ svi }: { svi: SVI | null }) {
+export function SVIPanel({ svi, trajectory }: { svi: SVI | null; trajectory?: ReactNode }) {
   if (!svi) {
     return (
       <section className="card svi-panel empty">
@@ -70,6 +71,8 @@ export function SVIPanel({ svi }: { svi: SVI | null }) {
           Screened with the short form only: {svi.coarse_domains.join(", ")}.
         </p>
       )}
+
+      {trajectory}
 
       <div className="channels">
         <div><span className="lbl">Context</span>

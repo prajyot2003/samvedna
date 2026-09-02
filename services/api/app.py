@@ -277,6 +277,26 @@ def create_app(repo: Optional[Repository] = None, bus=None,
         await pipeline.close(session)
         return session.public_state(pipeline.agent)
 
+    @app.get("/interactions/{interaction_id}/history")
+    async def read_history(interaction_id: str,
+                           operator: str = Depends(require_operator)):
+        """The assessment's trajectory. Carries only what the console draws —
+        no transcript, no facts, no identifiers."""
+        get_session(interaction_id)
+        return {
+            "interaction_id": interaction_id,
+            "snapshots": [
+                {"score": row.score, "tier": row.final_tier,
+                 "computed_tier": row.tier, "abstained": row.abstained,
+                 "model_bypassed": row.model_bypassed,
+                 "channel_a": row.channel_a, "channel_b": row.channel_b,
+                 "channel_c_delta": row.channel_c_delta,
+                 "rules_triggered": row.rules_triggered or [],
+                 "at": row.computed_at.isoformat()}
+                for row in repo.snapshot_history(interaction_id)
+            ],
+        }
+
     # ----------------------------------------------------------- live feed
 
     @app.websocket("/ws/interactions/{interaction_id}")

@@ -14,6 +14,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <a className="skip-link" href="#main">Skip to the console</a>
       <DemoBanner apiBase={apiBase} />
       <nav className="app-nav">
         <div className="brand">
@@ -30,7 +31,9 @@ export default function App() {
           Decision support. Not a diagnostic service.
         </span>
       </nav>
-      {view === "console" ? <CounsellorConsole /> : <DistrictDashboard />}
+      <main id="main">
+        {view === "console" ? <CounsellorConsole /> : <DistrictDashboard />}
+      </main>
     </div>
   );
 }

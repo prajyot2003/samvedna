@@ -105,6 +105,78 @@ input, textarea, select {
   border-radius: var(--radius);
 }
 
+/*
+ * Dark mode.
+ *
+ * Helpline shifts run through the night, and a screen bright enough to read a
+ * transcript at 3am is bright enough to be tiring by 5. Tier colours are
+ * re-picked rather than inverted: the light-mode critical red goes muddy on a
+ * dark ground, and the one colour on this screen that must never be ambiguous
+ * is the one that means someone is in danger.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #e6e9ef;
+    --ink-soft: #b8c0cd;
+    --muted: #8791a1;
+    --line: #2b323d;
+    --line-soft: #232932;
+    --surface: #171b22;
+    --surface-2: #1d222b;
+    --paper: #10131a;
+
+    --accent: #8fabe6;
+    --accent-soft: #1b2432;
+
+    --tier-low: #63b795;
+    --tier-low-bg: #16241f;
+    --tier-moderate: #d3a856;
+    --tier-moderate-bg: #262013;
+    --tier-high: #e6884f;
+    --tier-high-bg: #291b12;
+    --tier-critical: #e97186;
+    --tier-critical-bg: #2b1519;
+
+    --warn: #d3a856;
+    --warn-bg: #262013;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 10px 30px -20px rgba(0, 0, 0, .9);
+  }
+
+  button.primary { color: #10131a; }
+  button.primary:hover:not(:disabled) { color: #10131a; }
+}
+
+/* Visually hidden, still announced. Used for the live region that reports a
+   tier change — the thing a counsellor most needs to notice and the easiest to
+   miss while listening to someone. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.skip-link {
+  position: absolute; left: -9999px; top: 0; z-index: 100;
+  background: var(--accent); color: #fff; padding: .5rem .9rem;
+  border-radius: 0 0 var(--radius) 0;
+}
+.skip-link:focus { left: 0; }
+
+kbd {
+  font-family: var(--mono); font-size: .7em;
+  border: 1px solid var(--line); border-bottom-width: 2px;
+  border-radius: 3px; padding: .05em .35em;
+  background: var(--surface-2); color: var(--muted);
+  margin-left: .3em; white-space: nowrap;
+}
+
+.link-button {
+  border: none; background: none; padding: 0;
+  color: var(--accent); font-size: inherit; text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.link-button:hover { filter: brightness(1.2); }
+
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }

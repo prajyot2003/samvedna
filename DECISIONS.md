@@ -424,3 +424,53 @@ rather than accuracy, with precision explicitly not optimised.
 government credentials, and for each one states what is built, what is not, and
 what remains. Nothing in this repository simulates a government system and
 presents the simulation as a connection.
+
+## D51 — The console could not record what a caller said after the first question
+The narrative box only rendered while the agent's next action was
+`open_narrative`. Once the interview moved to slots it disappeared, so anything
+the caller said from that point on could not be entered at all — no extraction,
+no crisis detection, no trace in the case record.
+
+Calls are continuous speech. People disclose the thing that matters twenty
+minutes in, halfway through an unrelated question. `NarrativeBox` is now always
+present, independent of what the agent is asking.
+
+This was a functional hole, not a design preference, and it survived because
+the tests exercised the API rather than the operator's path through the screen.
+
+## D52 — Keyboard-first, and nothing destructive is bound
+A counsellor has a phone in one hand and a distressed caller on the other end.
+Y/N answers consent, slots and confirmations; number keys answer screener
+scales in the order displayed; `U` reviews answers; `?` shows the list.
+
+Two constraints keep it safe. Nothing fires while focus is in a text field, so
+recording what the caller said can never answer a question by accident. And no
+destructive action is bound — a mistyped key can only record a visible,
+correctable answer, never close a case or raise a referral.
+
+## D53 — Corrections are re-answers, never erasures
+A caller correcting themselves mid-call is normal, and mis-clicks happen. The
+review dialog re-answers through the same endpoint, so the original answer stays
+in the audit ledger and the new one is appended after it. The record shows that
+a counsellor changed their mind and when, which is the point of having a ledger.
+
+## D54 — The trajectory was stored from the first schema and never drawn
+`svi_snapshot` has been append-only since Phase 4 specifically so the score's
+movement could be shown, and nothing used it. `GET /interactions/{id}/history`
+now serves it and the console draws a sparkline with tier bands behind the line,
+marking the points where a safety rule set the tier rather than the score.
+
+The endpoint carries scores and nothing else — no transcript, no facts, no
+identifiers — because a second endpoint that returned them would be a second way
+to leak them. Asserted by a test that checks the exact key set.
+
+## D55 — Dark mode re-picks the tier colours rather than inverting them
+Helpline shifts run overnight. The light-mode critical red goes muddy on a dark
+ground, and the one colour on this screen that must never be ambiguous is the
+one that means someone is in danger.
+
+## D56 — A tier change is announced, not only coloured
+It is the thing a counsellor most needs to notice and the easiest to miss while
+listening to someone. A polite live region states the new tier and whether a
+safety rule set it. Tier is already carried by shape as well as hue (D44); this
+extends the same reasoning to people not looking at the screen at all.
