@@ -35,6 +35,60 @@ So: **console on Vercel, backend in a container.**
 
 ---
 
+## 0. The database
+
+Nothing about the system requires the database to be on your machine, and for a
+demo it should not be: a judge who reloads the console must see the same case
+record you were just looking at, and SQLite in a container filesystem does not
+survive a redeploy.
+
+### Getting a hosted Postgres
+
+Any managed provider works. Neon is the shortest path — free tier, no card:
+
+1. Sign up at https://neon.tech and create a project (region: Singapore or
+   Mumbai, whichever is offered).
+2. Copy the connection string from the dashboard. It looks like
+   `postgres://user:password@ep-xxx.ap-southeast-1.aws.neon.tech/neondb`.
+3. Set it and run:
+
+```bash
+export SAMVEDNA_DATABASE_URL='postgres://…the string you copied…'
+python3 -m scripts.run_api          # tables are created on first start
+python3 scripts/verify_audit.py     # confirms the chain on the cloud database
+```
+
+Supabase, Railway, Render and Amazon RDS work identically — paste the string
+they give you, unchanged.
+
+### Why you can paste the string unchanged
+
+Providers hand out `postgres://` URLs. SQLAlchemy 2.0 reads that scheme as the
+long-removed psycopg2 driver and fails with `ModuleNotFoundError: No module
+named 'psycopg2'`, which tells you nothing about what is wrong.
+`normalise_database_url()` rewrites the scheme to `postgresql+psycopg` and adds
+`sslmode=require` when the host belongs to a known managed provider — while
+never downgrading an `sslmode` you set yourself, and leaving localhost and
+SQLite alone. Connection strings are redacted (password *and* query string)
+before they reach any log line. See D57.
+
+### One thing to know about running it hosted
+
+The audit chain is hash-linked, so two concurrent appenders must not read the
+same head. On SQLite the single-writer lock made that impossible by accident;
+on real Postgres it is not, and the concurrency test failed the first time it
+ran against one. The chain now takes a transaction-scoped advisory lock before
+reading the head. Nothing to configure — but it is the reason the ledger holds
+under load rather than dropping events. See D58.
+
+### Keeping SQLite
+
+Leave `SAMVEDNA_DATABASE_URL` unset. It defaults to `sqlite:///samvedna.db`,
+which is right for tests and for working offline, and wrong for anything a
+second person will look at.
+
+---
+
 ## 1. Backend
 
 ### Locally, in the deployment shape
