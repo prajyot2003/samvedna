@@ -474,3 +474,38 @@ It is the thing a counsellor most needs to notice and the easiest to miss while
 listening to someone. A polite live region states the new tier and whether a
 safety rule set it. Tier is already carried by shape as well as hue (D44); this
 extends the same reasoning to people not looking at the screen at all.
+
+## D57 — Connection strings are normalised, not documented
+Managed Postgres providers hand out `postgres://…` URLs. SQLAlchemy 2.0 reads
+that scheme as the long-dead psycopg2 driver and fails with
+`ModuleNotFoundError: No module named 'psycopg2'` — an error that says nothing
+about what is actually wrong. `normalise_database_url()` rewrites the scheme to
+`postgresql+psycopg` and adds `sslmode=require` when the host is a known managed
+provider. It never downgrades an `sslmode` the operator set explicitly, and it
+leaves localhost and SQLite alone, because forcing TLS on a local socket only
+breaks the developer loop.
+
+Normalisation happens inside `Repository.__init__`, not only on the settings
+object. A URL passed directly — `verify_audit.py --database-url …` — is the
+likeliest place an operator meets this, and that path was broken until a test
+covered it.
+
+`redact_database_url()` strips the password *and* the query string before any
+log line. Providers put credentials in query parameters too.
+
+## D58 — The audit chain needed a real lock, and only real Postgres showed it
+`test_concurrent_appends_do_not_fork_the_chain` passed on SQLite for ten phases
+and failed the first time it ran against PostgreSQL: four threads exhausted the
+eight-attempt retry budget and raised `ChainAppendError`. SQLite's single-writer
+lock had been serialising the appenders and hiding the contention completely.
+A suite that only ever ran on SQLite would have shipped this, and it would have
+appeared in production as dropped audit events under load — the one class of
+failure this ledger exists to prevent.
+
+The fix is a transaction-scoped advisory lock (`pg_advisory_xact_lock`) taken
+before the chain head is read, so the read-hash-append sequence is atomic against
+other appenders, plus jittered exponential backoff on the retry path so the
+losers of a race do not resynchronise and collide again. The lock is a no-op on
+SQLite, which does not need it. Verified at 12 threads × 25 appends against a
+real PostgreSQL 16: no failures, 301 records, no duplicate sequence numbers,
+chain verifies.

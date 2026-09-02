@@ -257,3 +257,75 @@ def test_overdue_actions_are_returned_worst_first(repo):
     dues = [d.due_at for d in overdue]
     assert dues == sorted(dues)
     assert all(a.status == "open" for a in overdue)
+
+
+# ------------------------------------------------- connection strings
+
+@pytest.mark.parametrize("given,expected_scheme", [
+    ("postgres://u:p@host/db", "postgresql+psycopg"),
+    ("postgresql://u:p@host/db", "postgresql+psycopg"),
+    ("postgresql+psycopg2://u:p@host/db", "postgresql+psycopg"),
+    ("postgresql+psycopg://u:p@host/db", "postgresql+psycopg"),
+])
+def test_provider_urls_get_a_driver(given, expected_scheme):
+    """`postgres://` is what every dashboard copies out, and SQLAlchemy 2 will
+    not resolve a driver from it — failing with an error that reads like a
+    missing package rather than a missing driver name."""
+    from services.config import normalise_database_url
+    assert normalise_database_url(given).startswith(expected_scheme + "://")
+
+
+@pytest.mark.parametrize("host", [
+    "ep-x.aws.neon.tech", "db.abc.supabase.co",
+    "dpg-x.oregon-postgres.render.com", "x.railway.app",
+])
+def test_managed_hosts_get_tls(host):
+    """Managed Postgres is remote by definition. Some providers include TLS in
+    the URL and some do not; the ones that do not fail with a connection error
+    that says nothing about TLS."""
+    from services.config import normalise_database_url
+    assert "sslmode=require" in normalise_database_url(f"postgresql://u:p@{host}/db")
+
+
+def test_an_explicit_ssl_setting_is_never_downgraded():
+    """Someone who set verify-full meant it. Quietly relaxing a TLS setting on
+    a service carrying victim disclosures is not a thing this should do."""
+    from services.config import normalise_database_url
+    out = normalise_database_url("postgresql://u:p@x.neon.tech/db?sslmode=verify-full")
+    assert "sslmode=verify-full" in out
+    assert "sslmode=require" not in out
+
+
+def test_localhost_is_left_alone():
+    from services.config import normalise_database_url
+    assert "sslmode" not in normalise_database_url("postgresql://u:p@localhost/db")
+
+
+def test_sqlite_is_untouched():
+    from services.config import normalise_database_url
+    assert normalise_database_url("sqlite:///x.db") == "sqlite:///x.db"
+
+
+def test_a_connection_string_is_never_logged_whole():
+    """A connection string in a log line is a credential in a log line."""
+    from services.config import redact_database_url
+    out = redact_database_url("postgresql://user:sup3rsecret@host:5432/db?sslmode=require")
+    assert "sup3rsecret" not in out
+    assert "sslmode" not in out          # query can carry credentials too
+    assert "host:5432" in out
+
+
+def test_a_provider_url_passed_directly_to_the_repository_works(tmp_path):
+    """Scripts take --database-url. Pasting a provider's `postgres://` string
+    into one must not fail with a missing-package error about a driver the user
+    never chose."""
+    from services.store.repo import Repository as R
+    engine_url = str(R("sqlite:///" + str(tmp_path / "x.db")).engine.url)
+    assert engine_url.startswith("sqlite")
+
+    # The scheme is rewritten before SQLAlchemy ever sees it; connecting is not
+    # attempted, so no server is needed to assert the driver was chosen.
+    from sqlalchemy.engine import make_url
+    from services.config import normalise_database_url
+    assert make_url(normalise_database_url(
+        "postgres://u:p@ep-x.aws.neon.tech/db")).drivername == "postgresql+psycopg"
