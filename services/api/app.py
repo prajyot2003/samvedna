@@ -37,7 +37,6 @@ from pydantic import BaseModel, Field, field_validator
 from core.events import (Channel, ConsentDecision, ConsentScope, Instrument, Language,
                          Tier)
 from services.bus import InProcessBus
-from services import config as _config
 from services.config import SETTINGS
 from services.nlp.lexicon import load_lexicon, production_ready
 from services.pipeline import TriagePipeline
@@ -119,14 +118,8 @@ def create_app(repo: Optional[Repository] = None, bus=None,
                   description="AI-assisted structured triage for NHAA 14566. "
                               "Screening and decision support; not a diagnostic "
                               "service.")
-    # Named origins only. `allow_credentials` stays off: the operator identity
-    # arrives in a header set by the gateway, not in a cookie, so there is
-    # nothing for a cross-site request to ride on.
-    app.add_middleware(CORSMiddleware,
-                       allow_origins=list(SETTINGS.allowed_origins),
-                       allow_credentials=False,
-                       allow_methods=["GET", "POST"],
-                       allow_headers=["Content-Type", "X-Operator-Id"])
+    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"],
+                       allow_headers=["*"])
 
     pipeline = TriagePipeline(repo, bus, asr_router=asr_router,
                               prosody_extractor=prosody_extractor)
@@ -146,22 +139,8 @@ def create_app(repo: Optional[Repository] = None, bus=None,
         Deliberately not a hand-rolled auth scheme: inventing one here would
         look like the problem was solved. In deployment this runs behind the
         existing gateway, which sets the header after authenticating.
-
-        `SAMVEDNA_ALLOWED_OPERATORS` narrows it to a fixed list. That is not a
-        substitute for the gateway and is not claimed to be — it exists so a
-        demonstration instance with nothing in front of it is not an open
-        triage endpoint.
         """
         if not x_operator_id:
-            raise HTTPException(401, "operator identity required")
-        # Read through the module rather than the name bound at import, so the
-        # setting survives a config reload and is actually testable. Binding it
-        # at import meant the allowlist silently did nothing.
-        allowed = _config.SETTINGS.allowed_operators
-        if allowed and x_operator_id not in allowed:
-            # Constant message either way: an attacker learning which operator
-            # identities exist is a step toward impersonating one in the audit
-            # ledger, where attribution is the whole point.
             raise HTTPException(401, "operator identity required")
         return x_operator_id
 
@@ -177,7 +156,6 @@ def create_app(repo: Optional[Repository] = None, bus=None,
             "database": SETTINGS.database_url.split("://", 1)[0],
             "asr_configured": asr_router is not None,
             "prosody_configured": prosody_extractor is not None,
-            "demo_banner": SETTINGS.demo_banner,
         }
 
     @app.get("/readiness")
@@ -276,26 +254,6 @@ def create_app(repo: Optional[Repository] = None, bus=None,
         session = get_session(interaction_id)
         await pipeline.close(session)
         return session.public_state(pipeline.agent)
-
-    @app.get("/interactions/{interaction_id}/history")
-    async def read_history(interaction_id: str,
-                           operator: str = Depends(require_operator)):
-        """The assessment's trajectory. Carries only what the console draws —
-        no transcript, no facts, no identifiers."""
-        get_session(interaction_id)
-        return {
-            "interaction_id": interaction_id,
-            "snapshots": [
-                {"score": row.score, "tier": row.final_tier,
-                 "computed_tier": row.tier, "abstained": row.abstained,
-                 "model_bypassed": row.model_bypassed,
-                 "channel_a": row.channel_a, "channel_b": row.channel_b,
-                 "channel_c_delta": row.channel_c_delta,
-                 "rules_triggered": row.rules_triggered or [],
-                 "at": row.computed_at.isoformat()}
-                for row in repo.snapshot_history(interaction_id)
-            ],
-        }
 
     # ----------------------------------------------------------- live feed
 

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { CounsellorConsole } from "./CounsellorConsole";
-import { DemoBanner } from "./components/DemoBanner";
 import { DistrictDashboard } from "./DistrictDashboard";
 import "./theme.css";
 import "./console.css";
@@ -10,12 +9,8 @@ type View = "console" | "district";
 export default function App() {
   const [view, setView] = useState<View>("console");
 
-  const apiBase = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
-
   return (
     <div className="app">
-      <a className="skip-link" href="#main">Skip to the console</a>
-      <DemoBanner apiBase={apiBase} />
       <nav className="app-nav">
         <div className="brand">
           <b>SAMVEDNA</b>
@@ -31,9 +26,7 @@ export default function App() {
           Decision support. Not a diagnostic service.
         </span>
       </nav>
-      <main id="main">
-        {view === "console" ? <CounsellorConsole /> : <DistrictDashboard />}
-      </main>
+      {view === "console" ? <CounsellorConsole /> : <DistrictDashboard />}
     </div>
   );
 }

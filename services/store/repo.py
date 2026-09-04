@@ -9,22 +9,12 @@ too, or neither is committed.
 TWO THINGS WORTH READING CLOSELY:
 
 1. CHAIN CONCURRENCY. Appending to a hash chain is a read-modify-write on the
-   head, and it must be serialised.
-
-   Where the backend offers a lock, appenders take one: on PostgreSQL a
-   transaction-scoped advisory lock, released automatically at commit or
-   rollback. Writers then queue instead of colliding.
-
-   The UNIQUE constraint on `seq` remains as the backstop that makes a fork
-   impossible rather than merely unlikely — a second process on a backend
-   without advisory locks, or a bug in this file, still cannot produce two
-   records with the same sequence number. A loser re-reads the new head and
-   recomputes against it, with bounded, jittered retries.
-
-   THIS WAS FOUND BY RUNNING THE SUITE AGAINST REAL POSTGRES. On SQLite the
-   single-writer lock serialised appenders and hid the contention entirely;
-   four threads on PostgreSQL exhausted the retry budget and raised. A test
-   that only ever ran against SQLite would have shipped this.
+   head. Two counsellors acting at the same moment both read head N and both
+   try to write N+1. The UNIQUE constraint on `seq` means exactly one insert
+   survives; the loser catches the integrity error, re-reads the new head and
+   recomputes its own hash against it. Without this the chain silently forks
+   and verification fails later, in production, with no way to reconstruct
+   what happened. Retries are bounded and the failure is loud.
 
 2. TIMEZONES ON SQLITE. SQLite has no native timezone-aware type, so
    `DateTime(timezone=True)` round-trips as a naive value. `core.audit` refuses
@@ -35,36 +25,21 @@ TWO THINGS WORTH READING CLOSELY:
 
 from __future__ import annotations
 
-import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
-from sqlalchemy import create_engine, delete, func, select, text
+from sqlalchemy import create_engine, delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from core.audit import (GENESIS_HASH, AuditEventType, AuditRecord, ChainVerification,
                         compute_hash, normalise_payload, verify_chain)
-from services.config import SETTINGS, normalise_database_url
+from services.config import SETTINGS
 from services.store import models
 from services.store.models import Base
 
 MAX_APPEND_RETRIES = 8
-RETRY_BASE_SECONDS = 0.01
-
-# Any stable 64-bit constant. Every appender takes the same lock, which is the
-# point: the chain has one head, so it has one queue.
-AUDIT_CHAIN_LOCK_KEY = 0x5A4D5645444E41       # "ZMVEDNA"
-
-
-def _jittered_backoff(attempt: int) -> float:
-    """Exponential with jitter. Without the jitter, writers that collided once
-    wake at the same instant and collide again — which is how a retry loop
-    becomes a thundering herd and exhausts its budget under exactly the load it
-    was meant to survive."""
-    import random
-    return RETRY_BASE_SECONDS * (2 ** attempt) * (0.5 + random.random())
 
 
 def _as_utc(dt: Optional[datetime]) -> Optional[datetime]:
@@ -83,12 +58,7 @@ class ChainAppendError(RuntimeError):
 
 class Repository:
     def __init__(self, database_url: Optional[str] = None, echo: Optional[bool] = None):
-        # Normalise here, not only in settings. Scripts take a --database-url
-        # and a person pasting a provider's `postgres://` string into one would
-        # otherwise get "No module named 'psycopg2'" — an error that sends you
-        # looking for a missing package when the problem is a missing driver
-        # name in a URL you were handed.
-        url = normalise_database_url(database_url or SETTINGS.database_url)
+        url = database_url or SETTINGS.database_url
         kwargs: Dict[str, Any] = {"echo": SETTINGS.echo_sql if echo is None else echo}
         if url.startswith("sqlite"):
             # Serialise writers; a hash chain has no meaningful partial order.
@@ -143,31 +113,21 @@ class Repository:
             return self._append_in(session, event_type, interaction_id, actor, payload, ts)
 
         last_error: Optional[Exception] = None
-        for attempt in range(MAX_APPEND_RETRIES):
+        for _ in range(MAX_APPEND_RETRIES):
             try:
                 with self.session() as s:
                     return self._append_in(s, event_type, interaction_id, actor, payload, ts)
             except IntegrityError as exc:
                 last_error = exc          # another writer took our sequence number
-                time.sleep(_jittered_backoff(attempt))
                 continue
         raise ChainAppendError(
             f"could not append to the audit chain after {MAX_APPEND_RETRIES} attempts"
         ) from last_error
 
-    def _lock_chain(self, s: Session) -> None:
-        """Serialise appenders where the backend can. Transaction-scoped, so it
-        is released on commit or rollback without a code path that could leak
-        it."""
-        if s.bind is not None and s.bind.dialect.name == "postgresql":
-            s.execute(text("SELECT pg_advisory_xact_lock(:key)"),
-                      {"key": AUDIT_CHAIN_LOCK_KEY})
-
     def _append_in(self, s: Session, event_type, interaction_id, actor, payload, ts):
         # Flatten to JSON-native types before hashing, so the digest covers
         # exactly what the JSON column will store. See core.audit.normalise_payload.
         payload = normalise_payload(payload)
-        self._lock_chain(s)
         head = self._head(s)
         prev_hash = head.record_hash if head else GENESIS_HASH
         seq = (head.seq + 1) if head else 0
@@ -350,22 +310,6 @@ class Repository:
                           models.SVISnapshot.id.desc())
                 .limit(1)
             ).scalar_one_or_none()
-
-    def snapshot_history(self, interaction_id: str, limit: int = 200) -> List[models.SVISnapshot]:
-        """Every recomputation for one interaction, oldest first.
-
-        The table is append-only for exactly this reason: a caller who becomes
-        more distressed as they describe what happened looks different from one
-        who was distressed from the first word, and only the trajectory shows
-        that. Storing it and never displaying it was a waste of the decision.
-        """
-        with self.session() as s:
-            return list(s.execute(
-                select(models.SVISnapshot)
-                .where(models.SVISnapshot.interaction_id == interaction_id)
-                .order_by(models.SVISnapshot.id)
-                .limit(limit)
-            ).scalars().all())
 
     def overdue_actions(self, now: Optional[datetime] = None) -> List[models.Action]:
         """SLA breaches, worst first. This drives the district dashboard."""

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { NextAction } from "../types";
 
 /**
@@ -8,14 +9,17 @@ import type { NextAction } from "../types";
  * asks the question — this panel never speaks to the caller.
  */
 export function NextQuestion({
-  action, onSlot, onScreener, onConsent, busy,
+  action, onSlot, onScreener, onConsent, onNarrative, busy,
 }: {
   action: NextAction | null;
   onSlot: (key: string, present: boolean) => void;
   onScreener: (instrument: string, index: number, value: number) => void;
   onConsent: (scope: string, decision: string) => void;
+  onNarrative: (text: string) => void;
   busy: boolean;
 }) {
+  const [narrative, setNarrative] = useState("");
+
   if (!action) {
     return <section className="card next-question closed">
       <span className="lbl">Interview complete</span>
@@ -35,11 +39,11 @@ export function NextQuestion({
         <div className="answers">
           <button className="primary" disabled={busy}
                   onClick={() => onConsent(action.scope!, "granted")}>
-            Consent given <kbd>Y</kbd>
+            Consent given
           </button>
           <button disabled={busy}
                   onClick={() => onConsent(action.scope!, "declined")}>
-            Declined <kbd>N</kbd>
+            Declined
           </button>
         </div>
       )}
@@ -47,13 +51,9 @@ export function NextQuestion({
       {action.kind === "ask_slot" && (
         <div className="answers">
           <button className="primary" disabled={busy}
-                  onClick={() => onSlot(action.slot_key!, true)}>
-            Yes <kbd>Y</kbd>
-          </button>
+                  onClick={() => onSlot(action.slot_key!, true)}>Yes</button>
           <button disabled={busy}
-                  onClick={() => onSlot(action.slot_key!, false)}>
-            No <kbd>N</kbd>
-          </button>
+                  onClick={() => onSlot(action.slot_key!, false)}>No</button>
         </div>
       )}
 
@@ -61,11 +61,11 @@ export function NextQuestion({
         <div className="answers">
           <button className="primary" disabled={busy}
                   onClick={() => onSlot(action.slot_key!, true)}>
-            Caller confirms <kbd>Y</kbd>
+            Caller confirms
           </button>
           <button disabled={busy}
                   onClick={() => onSlot(action.slot_key!, false)}>
-            Caller corrects this <kbd>N</kbd>
+            Caller corrects this
           </button>
         </div>
       )}
@@ -81,17 +81,26 @@ export function NextQuestion({
             <button key={value} disabled={busy}
                     onClick={() => onScreener(action.instrument!,
                                               action.item_index!, value)}>
-              {text} <kbd>{value}</kbd>
+              {text}
             </button>
           ))}
         </div>
       )}
 
       {action.kind === "open_narrative" && (
-        <p className="open-hint">
-          Listen, then record what they say in the box below. There is no need
-          to summarise — the narrative is what the extraction reads.
-        </p>
+        <form className="narrative" onSubmit={(e) => {
+          e.preventDefault();
+          const text = narrative.trim();
+          if (!text) return;
+          setNarrative("");
+          onNarrative(text);
+        }}>
+          <textarea className="deva" rows={3} value={narrative}
+                    placeholder="Type what the caller says…"
+                    onChange={(e) => setNarrative(e.target.value)} />
+          <button className="primary" type="submit"
+                  disabled={busy || !narrative.trim()}>Record</button>
+        </form>
       )}
 
       {action.kind === "crisis_handover" && (

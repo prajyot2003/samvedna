@@ -1,4 +1,4 @@
-import type { DashboardSummary, History, InteractionState, Readiness, Tier } from "./types";
+import type { DashboardSummary, InteractionState, Readiness, Tier } from "./types";
 
 const BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
 
@@ -66,24 +66,6 @@ export const api = {
 
   close: (id: string) =>
     request<InteractionState>(`/interactions/${id}/close`, { method: "POST" }),
-
-  history: (id: string) => request<History>(`/interactions/${id}/history`),
-
-  audio: async (id: string, blob: Blob, filename = "capture.wav") => {
-    const form = new FormData();
-    form.append("file", blob, filename);
-    const response = await fetch(`${BASE}/interactions/${id}/audio`, {
-      method: "POST",
-      headers: { "X-Operator-Id": OPERATOR },   // no Content-Type: the browser
-      body: form,                                // must set the multipart boundary
-    });
-    if (!response.ok) {
-      let detail = response.statusText;
-      try { detail = (await response.json()).detail ?? detail; } catch { /* keep */ }
-      throw new Error(`${response.status} — ${detail}`);
-    }
-    return response.json() as Promise<InteractionState>;
-  },
 
   dashboard: () => request<DashboardSummary>("/dashboard/summary"),
   readiness: () => request<Readiness>("/readiness"),
