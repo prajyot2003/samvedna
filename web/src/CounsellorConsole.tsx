@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import type { InteractionState, Tier } from "./types";
 import { ActionList } from "./components/ActionList";
+import { Composer } from "./components/Composer";
 import { NextQuestion } from "./components/NextQuestion";
 import { OverrideDialog } from "./components/OverrideDialog";
 import { StatusStrip } from "./components/StatusStrip";
@@ -108,10 +109,20 @@ export function CounsellorConsole() {
       <div className="console-grid">
         <div className="col-left">
           <Transcript entries={state.transcript} />
+          <Composer
+            busy={busy}
+            disabled={state.closed}
+            language={state.language}
+            onSubmit={(text) => run(() => api.utterance(id, text))}
+            onDictate={async (blob) => {
+              const result = await api.dictate(id, blob);
+              setState(result.state);
+              return result;
+            }}
+          />
           <NextQuestion
             action={state.next_action}
             busy={busy}
-            onNarrative={(text) => run(() => api.utterance(id, text))}
             onSlot={(key, present) => run(() => api.slot(id, key, present))}
             onScreener={(instrument, index, value) =>
               run(() => api.screener(id, instrument, index, value))}

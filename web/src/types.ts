@@ -95,3 +95,13 @@ export interface Readiness {
     reviewed: boolean; warning: string | null;
   }>;
 }
+
+export interface Dictation {
+  /** What the recogniser heard. Empty when no backend is loaded, or on silence. */
+  text: string;
+  recognised: boolean;
+  asr_configured: boolean;
+  signal_confidence: string;
+  quality_reasons: string[];
+  state: InteractionState;
+}

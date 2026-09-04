@@ -39,7 +39,7 @@ from core.events import (Channel, ConsentDecision, ConsentScope, Instrument, Lan
 from services.bus import InProcessBus
 from services.config import SETTINGS
 from services.nlp.lexicon import load_lexicon, production_ready
-from services.pipeline import TriagePipeline
+from services.pipeline import ConsentRequired, TriagePipeline
 from services.store.repo import Repository
 
 log = logging.getLogger(__name__)
@@ -204,10 +204,14 @@ def create_app(repo: Optional[Repository] = None, bus=None,
         await pipeline.ingest_text(session, body.text, body.speaker)
         return session.public_state(pipeline.agent)
 
-    @app.post("/interactions/{interaction_id}/audio")
-    async def add_audio(interaction_id: str, file: UploadFile = File(...),
-                        operator: str = Depends(require_operator)):
-        session = get_session(interaction_id)
+    async def read_upload(file: UploadFile):
+        """Decode an uploaded recording to mono float32.
+
+        WAV, FLAC and OGG are read; the browser recorder sends WAV deliberately,
+        because libsndfile cannot open the WebM/Opus container MediaRecorder
+        produces by default and the failure would look like a broken microphone
+        rather than an unsupported codec.
+        """
         try:
             import soundfile as sf
             audio, sample_rate = sf.read(io.BytesIO(await file.read()), dtype="float32")
@@ -216,8 +220,40 @@ def create_app(repo: Optional[Repository] = None, bus=None,
         audio = np.asarray(audio)
         if audio.ndim > 1:
             audio = audio.mean(axis=1)
-        await pipeline.ingest_audio(session, audio, int(sample_rate))
+        if audio.size == 0:
+            raise HTTPException(400, "the recording contained no audio")
+        return audio, int(sample_rate)
+
+    @app.post("/interactions/{interaction_id}/audio")
+    async def add_audio(interaction_id: str, file: UploadFile = File(...),
+                        operator: str = Depends(require_operator)):
+        session = get_session(interaction_id)
+        audio, sample_rate = await read_upload(file)
+        try:
+            await pipeline.ingest_audio(session, audio, sample_rate)
+        except ConsentRequired as exc:
+            raise HTTPException(409, str(exc))
         return session.public_state(pipeline.agent)
+
+    @app.post("/interactions/{interaction_id}/dictate")
+    async def dictate(interaction_id: str, file: UploadFile = File(...),
+                      operator: str = Depends(require_operator)):
+        """Speech to text for review, not for the record.
+
+        Returns the recognised words alongside the state, and appends nothing
+        to the transcript. The counsellor reads what came back, corrects it,
+        and submits it through /utterance if it is right. The acoustic analysis
+        does run and does count — the quality gate and prosody are measured
+        from the same recording, which is the only way a console-driven
+        interaction ever gets a Channel C signal at all.
+        """
+        session = get_session(interaction_id)
+        audio, sample_rate = await read_upload(file)
+        try:
+            result = await pipeline.dictate(session, audio, sample_rate)
+        except ConsentRequired as exc:
+            raise HTTPException(409, str(exc))
+        return {**result, "state": session.public_state(pipeline.agent)}
 
     @app.post("/interactions/{interaction_id}/slot")
     async def answer_slot(interaction_id: str, body: SlotAnswer,

@@ -220,3 +220,93 @@ td.late, .late { color: var(--tier-critical); font-weight: 600; }
 .verdict { font-family: var(--mono); font-size: .8rem; }
 .verdict.ok { color: var(--tier-low); }
 .verdict.bad { color: var(--tier-critical); }
+
+/* --------------------------------------------------------------- composer */
+/* The box the counsellor writes in, and the microphone that fills it.
+   Recording state has to be unmistakable from across a room: a live mic on a
+   victim helpline that looks the same as an idle one is a consent problem, not
+   a styling one. */
+
+.composer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.composer textarea {
+  width: 100%;
+  margin-top: 0.5rem;
+  resize: vertical;
+  min-height: 4.5rem;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.composer-actions .hint {
+  margin: 0 0 0 auto;
+  font-size: 0.75rem;
+  opacity: 0.65;
+}
+
+.composer .note {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  background: var(--surface-2, rgba(127, 127, 127, 0.1));
+}
+
+/* A filled circle, not an emoji: emoji render differently on every platform
+   and one of them is a face. */
+.mic {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-right: 0.4rem;
+  border-radius: 50% 50% 40% 40%;
+  background: currentColor;
+  vertical-align: baseline;
+}
+
+.rec {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  color: var(--tier-critical, #c0392b);
+}
+
+.rec-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--tier-critical, #c0392b);
+  animation: rec-pulse 1.4s ease-in-out infinite;
+}
+
+button.recording {
+  border-color: var(--tier-critical, #c0392b);
+  color: var(--tier-critical, #c0392b);
+}
+
+button.ghost {
+  opacity: 0.7;
+}
+
+@keyframes rec-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.25; }
+}
+
+/* Someone watching a recording indicator blink for a whole call, who is also
+   sensitive to motion, should not have to choose between the two. */
+@media (prefers-reduced-motion: reduce) {
+  .rec-dot { animation: none; }
+}

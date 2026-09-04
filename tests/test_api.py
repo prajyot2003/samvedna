@@ -198,12 +198,32 @@ def test_an_unknown_slot_is_rejected(client):
     assert response.status_code == 422
 
 
+def _wav(seconds: float = 2.0, sr: int = 16000, seed: int = 7) -> bytes:
+    import io
+    import soundfile as sf
+    rng = np.random.default_rng(seed)
+    samples = rng.normal(0, 0.3, int(sr * seconds)).astype(np.float32)
+    buffer = io.BytesIO()
+    sf.write(buffer, samples, sr, format="WAV", subtype="PCM_16")
+    return buffer.getvalue()
+
+
 def test_unreadable_audio_is_a_client_error_not_a_crash(client):
     iid = start(client)
     consent(client, iid)
     response = client.post(f"/interactions/{iid}/audio", headers=OPERATOR,
                            files={"file": ("x.wav", b"not audio", "audio/wav")})
     assert response.status_code == 400
+
+
+def test_ingested_audio_before_consent_is_refused_too(client):
+    """The same rule on the older path. This hole predates dictation: audio
+    POSTed before consent ran the gate and the prosody extractor and only the
+    transcript was withheld."""
+    iid = start(client)                       # deliberately no consent
+    response = client.post(f"/interactions/{iid}/audio", headers=OPERATOR,
+                           files={"file": ("call.wav", _wav(), "audio/wav")})
+    assert response.status_code == 409
 
 
 def test_real_audio_runs_the_quality_gate(client):
@@ -222,6 +242,94 @@ def test_real_audio_runs_the_quality_gate(client):
                        files={"file": ("call.wav", buffer.getvalue(), "audio/wav")}).json()
     assert body["signal"]["confidence"] == "low"
     assert body["signal"]["reasons"]
+
+
+# ------------------------------------------------- dictation
+
+def test_dictation_does_not_put_words_into_the_record(client):
+    """The whole point of the endpoint. Recognition error is worst on exactly
+    the dialects this system serves, so an unreviewed ASR string must not
+    become part of a victim's case file — it comes back as a draft."""
+    iid = start(client)
+    consent(client, iid)
+    before = client.get(f"/interactions/{iid}", headers=OPERATOR).json()["transcript"]
+
+    body = client.post(f"/interactions/{iid}/dictate", headers=OPERATOR,
+                       files={"file": ("d.wav", _wav(), "audio/wav")}).json()
+
+    assert "text" in body
+    after = client.get(f"/interactions/{iid}", headers=OPERATOR).json()["transcript"]
+    assert after == before, "dictation appended to the transcript"
+
+
+def test_dictation_still_runs_the_quality_gate(client):
+    """Dictation that skipped the gate would report a confident transcript from
+    audio the gate would have rejected, and the abstention path depends on that
+    verdict coming from the same recording the words did."""
+    iid = start(client)
+    consent(client, iid)
+    body = client.post(f"/interactions/{iid}/dictate", headers=OPERATOR,
+                       files={"file": ("d.wav", _wav(), "audio/wav")}).json()
+    assert body["signal_confidence"] == "low"
+    assert body["quality_reasons"]
+    assert body["state"]["signal"]["confidence"] == "low"
+
+
+def test_dictation_reports_whether_a_recogniser_exists(client):
+    """Silence and 'no ASR installed' must not look the same in the console.
+    One is a fact about the call; the other is a fact about the deployment."""
+    iid = start(client)
+    consent(client, iid)
+    body = client.post(f"/interactions/{iid}/dictate", headers=OPERATOR,
+                       files={"file": ("d.wav", _wav(), "audio/wav")}).json()
+    assert body["asr_configured"] is False
+    assert body["recognised"] is False
+
+
+def test_unreadable_dictation_is_a_client_error(client):
+    iid = start(client)
+    consent(client, iid)
+    response = client.post(f"/interactions/{iid}/dictate", headers=OPERATOR,
+                           files={"file": ("x.wav", b"not audio", "audio/wav")})
+    assert response.status_code == 400
+
+
+def test_an_empty_recording_is_rejected_rather_than_scored(client):
+    """A zero-length upload reaching the quality gate would produce a division
+    by zero deep in the signal path instead of a message anyone can act on."""
+    import io
+    import soundfile as sf
+    buffer = io.BytesIO()
+    sf.write(buffer, np.zeros(0, dtype=np.float32), 16000, format="WAV", subtype="PCM_16")
+
+    iid = start(client)
+    consent(client, iid)
+    response = client.post(f"/interactions/{iid}/dictate", headers=OPERATOR,
+                           files={"file": ("empty.wav", buffer.getvalue(), "audio/wav")})
+    assert response.status_code == 400
+
+
+def test_dictation_before_consent_does_not_analyse_the_voice(client):
+    """Consent precedes analysis, and a voice is analysis.
+
+    Running the quality gate and eGeMAPS prosody over a caller's audio before
+    the analysis scope is granted is processing their personal data without a
+    lawful basis under the DPDP Act — the fact that no words come back does not
+    make it not processing."""
+    iid = start(client)                       # deliberately no consent
+    response = client.post(f"/interactions/{iid}/dictate", headers=OPERATOR,
+                           files={"file": ("d.wav", _wav(), "audio/wav")})
+    assert response.status_code == 409
+    state = client.get(f"/interactions/{iid}", headers=OPERATOR).json()
+    assert not state["signal"]["reasons"], "the gate ran before consent"
+
+
+def test_dictation_requires_an_operator(client):
+    iid = start(client)
+    consent(client, iid)
+    response = client.post(f"/interactions/{iid}/dictate",
+                           files={"file": ("d.wav", _wav(), "audio/wav")})
+    assert response.status_code == 401
 
 
 # ------------------------------------------------- override

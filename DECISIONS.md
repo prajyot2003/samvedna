@@ -424,3 +424,50 @@ rather than accuracy, with precision explicitly not optimised.
 government credentials, and for each one states what is built, what is not, and
 what remains. Nothing in this repository simulates a government system and
 presents the simulation as a connection.
+
+## D57 — Dictation produces a draft, never a record
+The counsellor can speak into the console instead of typing, and what comes
+back lands in the text box for them to correct before it counts. `/dictate`
+returns the recognised words and appends nothing to the transcript; the text
+enters the record only when the counsellor submits it through `/utterance`.
+
+This is the read-back rule from the intake agent applied to recognition itself.
+Word error rates are worst on exactly the dialects spoken by the callers this
+system exists for, so an unreviewed ASR string becoming a permanent part of a
+victim's case file is not a hypothetical failure — it is the most likely one.
+Extraction reads the transcript to propose Channel A facts, and Channel A is
+the heaviest-weighted channel in the score.
+
+The recording is still analysed. The signal quality gate and the eGeMAPS
+prosody features are measured from the same audio the words came from, which
+is the only route by which a console-driven interaction produces a Channel C
+signal at all — before this, the acoustic channels were unreachable from the
+interface and every console interaction scored with Channel C at zero.
+
+Two smaller things fixed on the way. The composer is present for the whole
+call rather than only during `open_narrative`: callers say the thing that
+matters while being asked about something else, and a console that can only
+record during one scripted turn loses it. And the browser encodes WAV directly
+from the audio graph rather than using `MediaRecorder`, which produces WebM or
+MP4 that libsndfile cannot open — the previous component sent `capture.webm`
+to an endpoint that would have rejected it as unreadable audio.
+
+## D58 — A voice is personal data before it is words
+Found by a dictation test, present on the ingest path since Phase 5.
+
+`ingest_audio` checked consent inside `ingest_text`, downstream of everything
+acoustic. Audio POSTed before the analysis scope was granted therefore ran
+voice activity detection, the signal quality gate and eGeMAPS extraction over a
+caller's recording, and withheld only the transcript. Under the DPDP Act that
+is processing personal data without a lawful basis, and the fact that no words
+were produced does not make it not processing — eGeMAPS measures jitter,
+shimmer and harmonics-to-noise ratio from a person's voice.
+
+The consent check now sits at the top of `_analyse_audio`, before the first
+sample is read, and both `/audio` and `/dictate` return 409 rather than
+proceeding. Refusing loudly matters as much as refusing: a caller who has not
+consented and a recording that was empty must not produce the same result, or
+the console cannot tell a consent failure from a broken microphone.
+
+Rule 1 of the intake agent has said "consent precedes analysis" since Phase 6.
+It was enforced for text and not for audio, and no test asked.

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { NextAction } from "../types";
 
 /**
@@ -9,16 +8,14 @@ import type { NextAction } from "../types";
  * asks the question — this panel never speaks to the caller.
  */
 export function NextQuestion({
-  action, onSlot, onScreener, onConsent, onNarrative, busy,
+  action, onSlot, onScreener, onConsent, busy,
 }: {
   action: NextAction | null;
   onSlot: (key: string, present: boolean) => void;
   onScreener: (instrument: string, index: number, value: number) => void;
   onConsent: (scope: string, decision: string) => void;
-  onNarrative: (text: string) => void;
   busy: boolean;
 }) {
-  const [narrative, setNarrative] = useState("");
 
   if (!action) {
     return <section className="card next-question closed">
@@ -88,19 +85,9 @@ export function NextQuestion({
       )}
 
       {action.kind === "open_narrative" && (
-        <form className="narrative" onSubmit={(e) => {
-          e.preventDefault();
-          const text = narrative.trim();
-          if (!text) return;
-          setNarrative("");
-          onNarrative(text);
-        }}>
-          <textarea className="deva" rows={3} value={narrative}
-                    placeholder="Type what the caller says…"
-                    onChange={(e) => setNarrative(e.target.value)} />
-          <button className="primary" type="submit"
-                  disabled={busy || !narrative.trim()}>Record</button>
-        </form>
+        <p className="hint">
+          Write what the caller says in the box below — typed, or dictated.
+        </p>
       )}
 
       {action.kind === "crisis_handover" && (

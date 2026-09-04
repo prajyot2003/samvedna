@@ -58,6 +58,15 @@ from services.store.repo import Repository
 log = logging.getLogger(__name__)
 
 
+class ConsentRequired(RuntimeError):
+    """Audio reached the pipeline before the analysis scope was granted.
+
+    Raised rather than silently ignored: a caller who has not consented and a
+    caller whose recording was empty must not produce the same result, or the
+    console cannot tell a consent failure from a microphone failure.
+    """
+
+
 @dataclass
 class Session:
     """Live state for one interaction. Everything the console renders comes
@@ -219,14 +228,33 @@ class TriagePipeline:
         await self.recompute(session)
         return entry
 
-    async def ingest_audio(self, session: Session, audio: np.ndarray,
-                           sample_rate: int) -> Dict[str, Any]:
-        """Audio from IVRS or a browser capture.
+    async def _analyse_audio(self, session: Session, audio: np.ndarray,
+                             sample_rate: int) -> str:
+        """Everything acoustic, and nothing conversational.
 
-        The quality gate runs before recognition, because its verdict governs
-        whether the model channel may contribute at all — and it must be
-        recorded even when recognition itself fails.
+        Runs voice activity detection, recognition, the signal quality gate and
+        prosody, updating the session's acoustic state. Returns the recognised
+        text and does NOT append it to the transcript — the caller decides
+        whether the words become part of the record.
+
+        Split out of `ingest_audio` so that dictation can run the identical
+        analysis. A dictation path that skipped the quality gate would report a
+        confident transcript from audio the gate would have rejected, and the
+        abstention logic depends on that verdict being set from the same audio
+        the words came from.
+
+        CONSENT IS CHECKED HERE, not in `ingest_text` downstream. A voice is
+        personal data before it is words: running the quality gate and eGeMAPS
+        over a caller's audio is processing under the DPDP Act whether or not a
+        recogniser ever turns it into text. Checking further down the path —
+        which is what this file did until a dictation test caught it — meant
+        every acoustic feature was extracted from a caller who had not agreed
+        to be assessed, and only the transcript was withheld.
         """
+        if not session.state.analysis_granted():
+            raise ConsentRequired(
+                "analysis consent has not been granted for this interaction")
+
         vad = detect_speech(audio, sample_rate)
         session.timing = conversational_features(vad)
 
@@ -258,6 +286,43 @@ class TriagePipeline:
                     session.prosody = windows[-1].features
             except Exception as exc:                          # noqa: BLE001
                 log.warning("prosody extraction failed: %s", exc)
+
+        return transcript_text
+
+    async def dictate(self, session: Session, audio: np.ndarray,
+                      sample_rate: int) -> Dict[str, Any]:
+        """Speech to text for a counsellor to read, correct and then submit.
+
+        The recording is analysed exactly as ingested audio is — the quality
+        gate and eGeMAPS prosody run, so Channel C and the abstention path get
+        the signal they would otherwise never see from a typed console. What
+        does not happen is the transcript entering the record: recognition
+        error rates on Bhojpuri are the worst in the system, and an unreviewed
+        ASR string becoming a permanent part of a victim's case file is exactly
+        the failure the read-back rule exists to prevent.
+
+        So the words come back as a proposal. Nothing is scored from them until
+        the counsellor submits them through the ordinary text path.
+        """
+        text = await self._analyse_audio(session, audio, sample_rate)
+        await self.recompute(session)
+        return {
+            "text": text,
+            "recognised": bool(text),
+            "asr_configured": self.asr is not None,
+            "signal_confidence": session.signal_confidence,
+            "quality_reasons": list(session.quality_reasons),
+        }
+
+    async def ingest_audio(self, session: Session, audio: np.ndarray,
+                           sample_rate: int) -> Dict[str, Any]:
+        """Audio from IVRS or a browser capture.
+
+        The quality gate runs before recognition, because its verdict governs
+        whether the model channel may contribute at all — and it must be
+        recorded even when recognition itself fails.
+        """
+        transcript_text = await self._analyse_audio(session, audio, sample_rate)
 
         if transcript_text:
             return await self.ingest_text(session, transcript_text)

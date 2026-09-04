@@ -1,4 +1,4 @@
-import type { DashboardSummary, InteractionState, Readiness, Tier } from "./types";
+import type { DashboardSummary, Dictation, InteractionState, Readiness, Tier } from "./types";
 
 const BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
 
@@ -66,6 +66,26 @@ export const api = {
 
   close: (id: string) =>
     request<InteractionState>(`/interactions/${id}/close`, { method: "POST" }),
+
+  /**
+   * Speech to text for review. Nothing is added to the record here — the
+   * counsellor edits what comes back and submits it through `utterance`.
+   */
+  dictate: async (id: string, blob: Blob) => {
+    const form = new FormData();
+    form.append("file", blob, "dictation.wav");
+    const response = await fetch(`${BASE}/interactions/${id}/dictate`, {
+      method: "POST",
+      headers: { "X-Operator-Id": OPERATOR },   // no Content-Type: the browser
+      body: form,                               // must set the multipart boundary
+    });
+    if (!response.ok) {
+      let detail = response.statusText;
+      try { detail = (await response.json()).detail ?? detail; } catch { /* keep */ }
+      throw new Error(`${response.status} — ${detail}`);
+    }
+    return response.json() as Promise<Dictation>;
+  },
 
   dashboard: () => request<DashboardSummary>("/dashboard/summary"),
   readiness: () => request<Readiness>("/readiness"),
