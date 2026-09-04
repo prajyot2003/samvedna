@@ -310,3 +310,39 @@ button.ghost {
 @media (prefers-reduced-motion: reduce) {
   .rec-dot { animation: none; }
 }
+
+/* -------------------------------------------------------- language picker */
+/* The support level is a first-class part of this control, not fine print.
+   A counsellor who does not know that Odia has no recogniser will think the
+   microphone is broken and lose minutes on a call where minutes matter. */
+
+.language-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.language-picker select {
+  padding: 0.55rem 0.6rem;
+  font-size: 1rem;
+  border-radius: 6px;
+}
+
+.language-picker .support {
+  border-left: 3px solid var(--tier-low, #4a8);
+  padding: 0.55rem 0.75rem;
+  border-radius: 0 6px 6px 0;
+  background: var(--surface-2, rgba(127, 127, 127, 0.08));
+}
+
+.language-picker .support b { font-size: 0.9rem; }
+.language-picker .support p { margin: 0.35rem 0 0; font-size: 0.82rem; }
+.language-picker .support .warn { color: var(--tier-high, #d97706); }
+
+/* Colour tracks how well we serve the caller, so a gap is visible before the
+   call rather than discovered during it. */
+.support-native      { border-left-color: var(--tier-low, #4a8); }
+.support-substituted { border-left-color: var(--tier-moderate, #d3a017); }
+.support-declared    { border-left-color: var(--tier-high, #d97706); }
+.support-none        { border-left-color: var(--tier-critical, #c0392b); }

@@ -46,6 +46,9 @@ class Slot:
     def prompt(self, language: Language) -> str:
         return self.prompts[language.value]
 
+    def is_translated(self, language: Language) -> bool:
+        return translated(self.prompts, language)
+
 
 @dataclass(frozen=True)
 class ScreenerItem:
@@ -58,9 +61,59 @@ class ScreenerItem:
     def prompt(self, language: Language) -> str:
         return self.prompts[language.value]
 
+    def is_translated(self, language: Language) -> bool:
+        """False means the caller is hearing this validated instrument in
+        Hindi because their language has no authored translation yet."""
+        return translated(self.prompts, language)
 
-def _p(hi: str, bho: str) -> Dict[str, str]:
-    return {"hi": hi, "bho": bho}
+
+# Languages whose prompts have been authored. A language absent from this set
+# is served in Hindi and the console says so — see `_p` below.
+AUTHORED: Dict[str, set] = {}
+
+
+def _p(hi: str, bho: str, **others: str) -> Dict[str, str]:
+    """One prompt in every language, falling back to Hindi where unauthored.
+
+    THIS FUNCTION REFUSES TO INVENT CLINICAL LANGUAGE, and that refusal is the
+    design. PHQ-9, GAD-7, PC-PTSD-5 and the C-SSRS are validated instruments;
+    their psychometric properties belong to specific wordings, and a machine
+    translation of "little interest or pleasure in doing things" into Odia is
+    not the Odia PHQ-9 — it is a new, unvalidated question wearing the name of
+    a validated one. Presenting it as the instrument would let us report a
+    screening result we have no basis for.
+
+    So an unauthored language falls back to Hindi, `translated()` reports
+    False for it, and the counsellor console shows which language the caller is
+    actually hearing. A counsellor reading a Hindi item to a Tamil speaker is a
+    visible, correctable limitation. A fabricated Tamil item that scores as
+    PHQ-9 is an invisible, uncorrectable one.
+
+    Officially translated and validated instruments exist for several of these
+    languages. Obtaining them, and having a clinician confirm each against the
+    source, is a task in evidence/PILOT_PROTOCOL.md — not something this file
+    may shortcut.
+    """
+    prompts = {"hi": hi, "bho": bho, **others}
+    return {code: prompts.get(code, hi) for code in _ALL_CODES} | {
+        _AUTHORED_KEY: frozenset(prompts)}
+
+
+_AUTHORED_KEY = "__authored__"
+
+
+def _codes() -> Tuple[str, ...]:
+    from core.languages import PROFILES
+    return tuple(PROFILES)
+
+
+_ALL_CODES = _codes()
+
+
+def translated(prompts: Dict[str, str], language: Language) -> bool:
+    """Whether this prompt was authored in the caller's language, or is Hindi
+    standing in for it."""
+    return language.value in prompts.get(_AUTHORED_KEY, frozenset())
 
 
 # --------------------------------------------------------------------------

@@ -38,6 +38,14 @@ LEXICON_DIR = Path(__file__).with_name("lexicons")
 
 SEVERITY_ORDER = {"moderate": 0, "high": 1, "critical": 2}
 
+# Review status values, worst to best. MACHINE_DRAFTED is deliberately distinct
+# from the older UNREVIEWED: "a person assembled this and nobody checked it" and
+# "a language model wrote this" are different risks and deserve different words.
+NOT_AUTHORED = "NOT_AUTHORED"
+MACHINE_DRAFTED = "MACHINE_DRAFTED"
+UNREVIEWED = "UNREVIEWED"
+REVIEWED = "REVIEWED"
+
 # Categories that the hard-rules layer consumes by name. Renaming one here
 # without updating core.rules.hard_rules would silently disconnect a safety
 # path, so the link is asserted by a test.
@@ -80,6 +88,7 @@ class Lexicon:
     language_name: str
     version: str
     reviewed: bool
+    authored: bool
     reviewed_by: Optional[str]
     review_note: str
     categories: Dict[str, Dict[str, object]]
@@ -93,6 +102,12 @@ class Lexicon:
         """Shown in the counsellor console and the model card."""
         if self.reviewed:
             return None
+        if not self.authored:
+            return (f"There is no {self.language_name} crisis lexicon. No distress "
+                    f"language will be detected automatically in this language at "
+                    f"all. The suicide screener is still administered in full, as "
+                    f"it is on every call — it is the safeguard you are relying on "
+                    f"here, so do not skip it.")
         return (f"The {self.language_name} crisis lexicon has not been reviewed by a "
                 f"native speaker. Detection of distress language in this language is "
                 f"incomplete; rely on the screeners and on your own judgement.")
@@ -137,19 +152,34 @@ def load_lexicon(language: Language, directory: Optional[str] = None) -> Lexicon
 
     raw = json.loads(path.read_text(encoding="utf-8"))
     review = raw.get("review", {})
+    status = str(review.get("status", "")).upper()
     categories = raw["categories"]
 
+    # An unauthored lexicon is allowed to be empty, and only an unauthored one.
+    # The distinction has to live in the loader: without it, the only way to
+    # register a language nobody on the team speaks is to invent terms for it,
+    # and inventing crisis terms in a language you do not know produces silent
+    # false negatives that look exactly like coverage.
+    empty_permitted = status == NOT_AUTHORED
+
     for name, spec in categories.items():
-        if not spec.get("terms"):
+        if not spec.get("terms") and not empty_permitted:
             raise ValueError(f"{path.name}: category '{name}' has no terms")
         if spec.get("severity") not in SEVERITY_ORDER:
             raise ValueError(f"{path.name}: category '{name}' has an unknown severity")
+
+    if empty_permitted and any(spec.get("terms") for spec in categories.values()):
+        raise ValueError(
+            f"{path.name}: marked {NOT_AUTHORED} but carries terms. Once someone "
+            f"has written terms the file is authored — set the status to "
+            f"MACHINE_DRAFTED or REVIEWED so the readiness gate reports it correctly.")
 
     return Lexicon(
         language=language,
         language_name=raw.get("language_name", language.value),
         version=raw.get("version", "unknown"),
-        reviewed=str(review.get("status", "")).upper() == "REVIEWED",
+        reviewed=status == REVIEWED,
+        authored=status != NOT_AUTHORED,
         reviewed_by=review.get("reviewed_by"),
         review_note=review.get("note", ""),
         categories=categories,
@@ -209,7 +239,12 @@ def production_ready(languages: Sequence[Language] = tuple(Language)) -> Tuple[b
         except FileNotFoundError as exc:
             blockers.append(str(exc))
             continue
-        if not lexicon.reviewed:
+        if not lexicon.authored:
+            blockers.append(
+                f"{lexicon.language_name} has no crisis lexicon at all "
+                f"(version {lexicon.version}) — it must be written by a speaker "
+                f"of the language before callers are offered it")
+        elif not lexicon.reviewed:
             blockers.append(
                 f"{lexicon.language_name} crisis lexicon ({lexicon.term_count} terms, "
                 f"version {lexicon.version}) has not been reviewed by a native speaker")

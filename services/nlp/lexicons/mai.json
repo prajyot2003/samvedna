@@ -1,0 +1,84 @@
+{
+ "language": "mai",
+ "language_name": "Maithili",
+ "version": "2026-09-04.draft",
+ "review": {
+  "status": "MACHINE_DRAFTED",
+  "reviewed_by": null,
+  "reviewed_on": null,
+  "note": "MACHINE-DRAFTED SEED. Written by a language model, not by a speaker of this language, and NOT fit for production use as written. It exists so that the language can be carried end to end through the pipeline and so that reviewers have something concrete to correct, which is faster than starting from an empty file. Two failure modes to look for: a term that is grammatical but not what people actually say, and — far more dangerous — a missing indirect expression of suicidal intent, because people rarely state it plainly. A native speaker AND a counsellor with crisis-line experience must both sign this file before the language is offered to callers."
+ },
+ "categories": {
+  "self_harm": {
+   "severity": "critical",
+   "note": "Feeds the self-harm hard rule directly. Escalates to CRITICAL with no model consulted. False positives here cost a screener question; false negatives cost a life.",
+   "terms": [
+    "आत्महत्या",
+    "जान द' देब",
+    "मरि जाएब",
+    "जीबाक मोन नै",
+    "अपन जान ल' लेब",
+    "फाँसी लगा लेब",
+    "जहर खा लेब",
+    "आब नै जीब",
+    "समाप्त क' लेब अपना के"
+   ]
+  },
+  "hopelessness": {
+   "severity": "high",
+   "note": "Not itself a crisis, but the strongest verbal predictor of one. Raises the tier, never sets it.",
+   "terms": [
+    "कोनो रस्ता नै",
+    "कोनो आस नै",
+    "किछु नै बचल",
+    "सब खतम भ' गेल",
+    "आब किछु नै हएत",
+    "बोझ भ' गेलहुँ"
+   ]
+  },
+  "imminent_violence": {
+   "severity": "critical",
+   "note": "The accused is present, nearby, or has threatened immediate harm. Feeds the imminent-danger rule and the s.15A protection path.",
+   "terms": [
+    "जान स' मारि देत",
+    "मारै लेल आबि रहल",
+    "घर बाहर ठाढ़ अछि",
+    "अखने मारत",
+    "हथियार ल' क' आएल"
+   ]
+  },
+  "fear": {
+   "severity": "moderate",
+   "note": "Sustained fear restricting movement or daily life. Contributes to Channel A rather than triggering a rule.",
+   "terms": [
+    "बड्ड डर लगैत",
+    "डरक मारे",
+    "घर स' नै निकलैत",
+    "बाहर नै जा सकैत"
+   ]
+  },
+  "isolation": {
+   "severity": "moderate",
+   "note": "Social boycott, the characteristic collective sanction in atrocity cases. Named in the Act's own offence list.",
+   "terms": [
+    "केओ गप्प नै करैत",
+    "गाम बला सब",
+    "बहिष्कार",
+    "हुक्का पानी बन्न",
+    "कूप स' पानी नै"
+   ]
+  },
+  "coercion": {
+   "severity": "high",
+   "note": "Pressure to withdraw a complaint. Directly relevant to witness protection under s.15A(11).",
+   "terms": [
+    "शिकायत वापस",
+    "केस वापस ल'",
+    "समझौता क' ल'",
+    "दबाव द' रहल",
+    "गवाही नै देब",
+    "मुकरि जाउ"
+   ]
+  }
+ }
+}

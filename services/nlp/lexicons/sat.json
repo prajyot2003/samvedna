@@ -1,0 +1,43 @@
+{
+ "language": "sat",
+ "language_name": "Santali",
+ "version": "2026-09-04.unauthored",
+ "review": {
+  "status": "NOT_AUTHORED",
+  "reviewed_by": null,
+  "reviewed_on": null,
+  "note": "DELIBERATELY EMPTY. No terms have been written for Santali because nobody involved in building this system speaks it, and a machine-drafted crisis lexicon in a language the drafter does not know is worse than no lexicon at all: it looks like coverage and produces silent false negatives, in the one category where a false negative is a death. Santali is registered as a supported language regardless, so that a caller reaching 14566 in Santali is served by a counsellor rather than turned away or quietly handled in Hindi. The C-SSRS is administered unconditionally on every interaction, which is precisely why no lexicon is load-bearing on its own — that safeguard is what makes shipping this file empty defensible rather than negligent. Authoring it requires a Santali-speaking counsellor and is the first task in the language section of evidence/PILOT_PROTOCOL.md."
+ },
+ "categories": {
+  "self_harm": {
+   "severity": "critical",
+   "note": "Feeds the cssrs/self-harm hard rule directly. Escalates to CRITICAL with no model consulted. False positives here cost a counsellor a few minutes; false negatives can cost a life, so the bar for inclusion is deliberately low.",
+   "terms": []
+  },
+  "hopelessness": {
+   "severity": "high",
+   "note": "Not on its own a crisis trigger; contributes to the distress signal and prompts the intake agent to administer the C-SSRS earlier in the interaction.",
+   "terms": []
+  },
+  "imminent_violence": {
+   "severity": "critical",
+   "note": "Feeds the imminent-threat hard rule. Present tense and immediacy markers matter more than the violence word itself.",
+   "terms": []
+  },
+  "fear": {
+   "severity": "moderate",
+   "note": "",
+   "terms": []
+  },
+  "isolation": {
+   "severity": "moderate",
+   "note": "Social boycott under s.3(1)(zc) frequently presents in these words before the complainant names it as a boycott.",
+   "terms": []
+  },
+  "coercion": {
+   "severity": "high",
+   "note": "Pressure to withdraw a complaint. Directly relevant to witness protection under s.15A(11).",
+   "terms": []
+  }
+ }
+}

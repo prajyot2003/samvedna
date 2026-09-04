@@ -1,0 +1,83 @@
+{
+ "language": "bn",
+ "language_name": "Bengali",
+ "version": "2026-09-04.draft",
+ "review": {
+  "status": "MACHINE_DRAFTED",
+  "reviewed_by": null,
+  "reviewed_on": null,
+  "note": "MACHINE-DRAFTED SEED. Written by a language model, not by a speaker of this language, and NOT fit for production use as written. It exists so that the language can be carried end to end through the pipeline and so that reviewers have something concrete to correct, which is faster than starting from an empty file. Two failure modes to look for: a term that is grammatical but not what people actually say, and — far more dangerous — a missing indirect expression of suicidal intent, because people rarely state it plainly. A native speaker AND a counsellor with crisis-line experience must both sign this file before the language is offered to callers."
+ },
+ "categories": {
+  "self_harm": {
+   "severity": "critical",
+   "note": "Feeds the self-harm hard rule directly. Escalates to CRITICAL with no model consulted. False positives here cost a screener question; false negatives cost a life.",
+   "terms": [
+    "আত্মহত্যা",
+    "জীবন দিয়ে দেব",
+    "মরে যাব",
+    "বাঁচতে ইচ্ছে করে না",
+    "নিজেকে শেষ করে দেব",
+    "ফাঁসি নেব",
+    "বিষ খাব",
+    "আর বাঁচব না"
+   ]
+  },
+  "hopelessness": {
+   "severity": "high",
+   "note": "Not itself a crisis, but the strongest verbal predictor of one. Raises the tier, never sets it.",
+   "terms": [
+    "কোনো উপায় নেই",
+    "কোনো আশা নেই",
+    "কিছুই বাকি নেই",
+    "সব শেষ হয়ে গেছে",
+    "আর কিছু হবে না",
+    "আমি বোঝা হয়ে গেছি"
+   ]
+  },
+  "imminent_violence": {
+   "severity": "critical",
+   "note": "The accused is present, nearby, or has threatened immediate harm. Feeds the imminent-danger rule and the s.15A protection path.",
+   "terms": [
+    "জানে মেরে ফেলবে",
+    "মারতে আসছে",
+    "বাড়ির বাইরে দাঁড়িয়ে",
+    "এক্ষুনি মারবে",
+    "অস্ত্র নিয়ে এসেছে"
+   ]
+  },
+  "fear": {
+   "severity": "moderate",
+   "note": "Sustained fear restricting movement or daily life. Contributes to Channel A rather than triggering a rule.",
+   "terms": [
+    "খুব ভয় লাগে",
+    "ভয়ে",
+    "ঘর থেকে বের হই না",
+    "বাইরে যেতে পারি না"
+   ]
+  },
+  "isolation": {
+   "severity": "moderate",
+   "note": "Social boycott, the characteristic collective sanction in atrocity cases. Named in the Act's own offence list.",
+   "terms": [
+    "কেউ কথা বলে না",
+    "গ্রামের লোকেরা",
+    "একঘরে করে দিয়েছে",
+    "জল নিতে দেয় না",
+    "সমাজ থেকে আলাদা"
+   ]
+  },
+  "coercion": {
+   "severity": "high",
+   "note": "Pressure to withdraw a complaint. Directly relevant to witness protection under s.15A(11).",
+   "terms": [
+    "অভিযোগ তুলে নাও",
+    "কেস তুলে নাও",
+    "মিটমাট করে নাও",
+    "চাপ দিচ্ছে",
+    "সাক্ষী দিও না",
+    "টাকা দিয়ে"
+   ]
+  }
+ }
+}

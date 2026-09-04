@@ -1,0 +1,84 @@
+{
+ "language": "kn",
+ "language_name": "Kannada",
+ "version": "2026-09-04.draft",
+ "review": {
+  "status": "MACHINE_DRAFTED",
+  "reviewed_by": null,
+  "reviewed_on": null,
+  "note": "MACHINE-DRAFTED SEED. Written by a language model, not by a speaker of this language, and NOT fit for production use as written. It exists so that the language can be carried end to end through the pipeline and so that reviewers have something concrete to correct, which is faster than starting from an empty file. Two failure modes to look for: a term that is grammatical but not what people actually say, and — far more dangerous — a missing indirect expression of suicidal intent, because people rarely state it plainly. A native speaker AND a counsellor with crisis-line experience must both sign this file before the language is offered to callers."
+ },
+ "categories": {
+  "self_harm": {
+   "severity": "critical",
+   "note": "Feeds the self-harm hard rule directly. Escalates to CRITICAL with no model consulted. False positives here cost a screener question; false negatives cost a life.",
+   "terms": [
+    "ಆತ್ಮಹತ್ಯೆ",
+    "ಪ್ರಾಣ ಬಿಡುತ್ತೇನೆ",
+    "ಸತ್ತು ಹೋಗುತ್ತೇನೆ",
+    "ಬದುಕಲು ಇಷ್ಟವಿಲ್ಲ",
+    "ನನ್ನನ್ನು ಮುಗಿಸಿಕೊಳ್ಳುತ್ತೇನೆ",
+    "ನೇಣು ಹಾಕಿಕೊಳ್ಳುತ್ತೇನೆ",
+    "ವಿಷ ಕುಡಿಯುತ್ತೇನೆ",
+    "ಇನ್ನು ಬದುಕುವುದಿಲ್ಲ"
+   ]
+  },
+  "hopelessness": {
+   "severity": "high",
+   "note": "Not itself a crisis, but the strongest verbal predictor of one. Raises the tier, never sets it.",
+   "terms": [
+    "ಯಾವ ದಾರಿಯೂ ಇಲ್ಲ",
+    "ಭರವಸೆ ಇಲ್ಲ",
+    "ಏನೂ ಉಳಿದಿಲ್ಲ",
+    "ಎಲ್ಲಾ ಮುಗಿದಿದೆ",
+    "ಇನ್ನು ಏನೂ ಆಗುವುದಿಲ್ಲ",
+    "ನಾನು ಹೊರೆಯಾಗಿದ್ದೇನೆ"
+   ]
+  },
+  "imminent_violence": {
+   "severity": "critical",
+   "note": "The accused is present, nearby, or has threatened immediate harm. Feeds the imminent-danger rule and the s.15A protection path.",
+   "terms": [
+    "ಕೊಂದು ಬಿಡುತ್ತೇವೆ ಎಂದು ಬೆದರಿಸಿದರು",
+    "ಕೊಂದು ಹಾಕುತ್ತಾರೆ",
+    "ಹೊಡೆಯಲು ಬರುತ್ತಿದ್ದಾರೆ",
+    "ಮನೆಯ ಹೊರಗೆ ನಿಂತಿದ್ದಾರೆ",
+    "ಈಗಲೇ ಹೊಡೆಯುತ್ತಾರೆ",
+    "ಆಯುಧ ತಂದಿದ್ದಾರೆ"
+   ]
+  },
+  "fear": {
+   "severity": "moderate",
+   "note": "Sustained fear restricting movement or daily life. Contributes to Channel A rather than triggering a rule.",
+   "terms": [
+    "ತುಂಬಾ ಭಯವಾಗುತ್ತಿದೆ",
+    "ಭಯದಿಂದ",
+    "ಮನೆಯಿಂದ ಹೊರಗೆ ಬರುವುದಿಲ್ಲ",
+    "ಹೊರಗೆ ಹೋಗಲು ಆಗುವುದಿಲ್ಲ"
+   ]
+  },
+  "isolation": {
+   "severity": "moderate",
+   "note": "Social boycott, the characteristic collective sanction in atrocity cases. Named in the Act's own offence list.",
+   "terms": [
+    "ಯಾರೂ ಮಾತನಾಡುವುದಿಲ್ಲ",
+    "ಊರಿನವರು",
+    "ಬಹಿಷ್ಕಾರ",
+    "ನೀರು ತೆಗೆದುಕೊಳ್ಳಲು ಬಿಡುವುದಿಲ್ಲ",
+    "ಸಮಾಜದಿಂದ ಹೊರಗಿಟ್ಟಿದ್ದಾರೆ"
+   ]
+  },
+  "coercion": {
+   "severity": "high",
+   "note": "Pressure to withdraw a complaint. Directly relevant to witness protection under s.15A(11).",
+   "terms": [
+    "ದೂರು ವಾಪಸ್",
+    "ಕೇಸು ವಾಪಸ್ ತೆಗೆದುಕೊ",
+    "ರಾಜಿ ಮಾಡಿಕೊ",
+    "ಒತ್ತಡ ಹಾಕುತ್ತಿದ್ದಾರೆ",
+    "ಸಾಕ್ಷಿ ಹೇಳಬೇಡ",
+    "ಹಣ ಕೊಟ್ಟು"
+   ]
+  }
+ }
+}

@@ -30,10 +30,38 @@ class Channel(str, Enum):
 
 
 class Language(str, Enum):
-    """Languages with full pipeline support: ASR, crisis lexicon, screener
-    translation and consent script. Adding one means adding all four."""
+    """Languages the helpline accepts.
+
+    Membership here is not a claim of equal support. What each language
+    actually gets — native recognition, a substitution, or none at all —
+    is declared in `core.languages.PROFILES`, and the readiness gate reports
+    every language's crisis lexicon separately. A test asserts that this enum
+    and that table name exactly the same set, because a language present in one
+    and missing from the other fails silently and degrades a caller's
+    experience without any screen saying so.
+
+    Selected by SC/ST (PoA) Act caseload rather than by speaker count. See the
+    header of `core.languages` for why Maithili, Odia and Santali are here.
+    """
     HINDI = "hi"
     BHOJPURI = "bho"
+    MAITHILI = "mai"
+    MARATHI = "mr"
+    BENGALI = "bn"
+    TELUGU = "te"
+    TAMIL = "ta"
+    KANNADA = "kn"
+    GUJARATI = "gu"
+    PUNJABI = "pa"
+    ODIA = "or"
+    SANTALI = "sat"
+
+    @property
+    def profile(self):
+        """This language's support profile. Imported lazily so that
+        `core.events` stays importable on its own."""
+        from core.languages import PROFILES
+        return PROFILES[self.value]
 
 
 class Speaker(str, Enum):

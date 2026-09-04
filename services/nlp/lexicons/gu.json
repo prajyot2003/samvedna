@@ -1,0 +1,84 @@
+{
+ "language": "gu",
+ "language_name": "Gujarati",
+ "version": "2026-09-04.draft",
+ "review": {
+  "status": "MACHINE_DRAFTED",
+  "reviewed_by": null,
+  "reviewed_on": null,
+  "note": "MACHINE-DRAFTED SEED. Written by a language model, not by a speaker of this language, and NOT fit for production use as written. It exists so that the language can be carried end to end through the pipeline and so that reviewers have something concrete to correct, which is faster than starting from an empty file. Two failure modes to look for: a term that is grammatical but not what people actually say, and — far more dangerous — a missing indirect expression of suicidal intent, because people rarely state it plainly. A native speaker AND a counsellor with crisis-line experience must both sign this file before the language is offered to callers."
+ },
+ "categories": {
+  "self_harm": {
+   "severity": "critical",
+   "note": "Feeds the self-harm hard rule directly. Escalates to CRITICAL with no model consulted. False positives here cost a screener question; false negatives cost a life.",
+   "terms": [
+    "આત્મહત્યા",
+    "જીવ આપી દઈશ",
+    "મરી જઈશ",
+    "જીવવાનું મન નથી",
+    "મારી જાતને પતાવી દઈશ",
+    "ફાંસી ખાઈ લઈશ",
+    "ઝેર પી લઈશ",
+    "હવે જીવીશ નહીં"
+   ]
+  },
+  "hopelessness": {
+   "severity": "high",
+   "note": "Not itself a crisis, but the strongest verbal predictor of one. Raises the tier, never sets it.",
+   "terms": [
+    "કોઈ રસ્તો નથી",
+    "કોઈ આશા નથી",
+    "કંઈ બચ્યું નથી",
+    "બધું ખતમ થઈ ગયું",
+    "હવે કંઈ થશે નહીં",
+    "હું બોજ બની ગયો છું"
+   ]
+  },
+  "imminent_violence": {
+   "severity": "critical",
+   "note": "The accused is present, nearby, or has threatened immediate harm. Feeds the imminent-danger rule and the s.15A protection path.",
+   "terms": [
+    "જાનથી મારી નાખવાની ધમકી",
+    "જાનથી મારી નાખશે",
+    "મારવા આવી રહ્યા છે",
+    "ઘરની બહાર ઊભા છે",
+    "અત્યારે જ મારશે",
+    "હથિયાર લઈને આવ્યા"
+   ]
+  },
+  "fear": {
+   "severity": "moderate",
+   "note": "Sustained fear restricting movement or daily life. Contributes to Channel A rather than triggering a rule.",
+   "terms": [
+    "બહુ ડર લાગે છે",
+    "ડરના માર્યા",
+    "ઘરની બહાર નીકળતો નથી",
+    "બહાર જઈ શકતો નથી"
+   ]
+  },
+  "isolation": {
+   "severity": "moderate",
+   "note": "Social boycott, the characteristic collective sanction in atrocity cases. Named in the Act's own offence list.",
+   "terms": [
+    "કોઈ વાત કરતું નથી",
+    "ગામવાળાઓએ",
+    "બહિષ્કાર",
+    "પાણી ભરવા દેતા નથી",
+    "સમાજથી અલગ કરી દીધા"
+   ]
+  },
+  "coercion": {
+   "severity": "high",
+   "note": "Pressure to withdraw a complaint. Directly relevant to witness protection under s.15A(11).",
+   "terms": [
+    "ફરિયાદ પાછી",
+    "કેસ પાછો ખેંચી લે",
+    "સમાધાન કરી લે",
+    "દબાણ કરી રહ્યા છે",
+    "જુબાની ન આપતો",
+    "પૈસા આપીને"
+   ]
+  }
+ }
+}

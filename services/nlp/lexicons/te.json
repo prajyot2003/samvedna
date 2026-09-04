@@ -1,0 +1,84 @@
+{
+ "language": "te",
+ "language_name": "Telugu",
+ "version": "2026-09-04.draft",
+ "review": {
+  "status": "MACHINE_DRAFTED",
+  "reviewed_by": null,
+  "reviewed_on": null,
+  "note": "MACHINE-DRAFTED SEED. Written by a language model, not by a speaker of this language, and NOT fit for production use as written. It exists so that the language can be carried end to end through the pipeline and so that reviewers have something concrete to correct, which is faster than starting from an empty file. Two failure modes to look for: a term that is grammatical but not what people actually say, and — far more dangerous — a missing indirect expression of suicidal intent, because people rarely state it plainly. A native speaker AND a counsellor with crisis-line experience must both sign this file before the language is offered to callers."
+ },
+ "categories": {
+  "self_harm": {
+   "severity": "critical",
+   "note": "Feeds the self-harm hard rule directly. Escalates to CRITICAL with no model consulted. False positives here cost a screener question; false negatives cost a life.",
+   "terms": [
+    "ఆత్మహత్య",
+    "చచ్చిపోతాను",
+    "ప్రాణం తీసుకుంటాను",
+    "బతకాలని లేదు",
+    "నన్ను నేను చంపుకుంటాను",
+    "ఉరి వేసుకుంటాను",
+    "విషం తాగుతాను",
+    "ఇక బతకను"
+   ]
+  },
+  "hopelessness": {
+   "severity": "high",
+   "note": "Not itself a crisis, but the strongest verbal predictor of one. Raises the tier, never sets it.",
+   "terms": [
+    "ఏ దారి లేదు",
+    "ఆశ లేదు",
+    "ఏమీ మిగలలేదు",
+    "అంతా అయిపోయింది",
+    "ఇక ఏమీ జరగదు",
+    "నేను భారంగా మారాను"
+   ]
+  },
+  "imminent_violence": {
+   "severity": "critical",
+   "note": "The accused is present, nearby, or has threatened immediate harm. Feeds the imminent-danger rule and the s.15A protection path.",
+   "terms": [
+    "చంపేస్తామని బెదిరించారు",
+    "చంపేస్తారు",
+    "కొట్టడానికి వస్తున్నారు",
+    "ఇంటి బయట నిలబడ్డారు",
+    "ఇప్పుడే కొడతారు",
+    "ఆయుధాలతో వచ్చారు"
+   ]
+  },
+  "fear": {
+   "severity": "moderate",
+   "note": "Sustained fear restricting movement or daily life. Contributes to Channel A rather than triggering a rule.",
+   "terms": [
+    "చాలా భయంగా ఉంది",
+    "భయంతో",
+    "ఇంటి నుంచి బయటకు రావడం లేదు",
+    "బయటకు వెళ్ళలేను"
+   ]
+  },
+  "isolation": {
+   "severity": "moderate",
+   "note": "Social boycott, the characteristic collective sanction in atrocity cases. Named in the Act's own offence list.",
+   "terms": [
+    "ఎవరూ మాట్లాడరు",
+    "ఊరి వాళ్ళు",
+    "వెలివేశారు",
+    "నీళ్ళు తీసుకోనివ్వరు",
+    "సంఘ బహిష్కరణ"
+   ]
+  },
+  "coercion": {
+   "severity": "high",
+   "note": "Pressure to withdraw a complaint. Directly relevant to witness protection under s.15A(11).",
+   "terms": [
+    "ఫిర్యాదు వాపసు",
+    "కేసు ఉపసంహరించు",
+    "రాజీ చేసుకో",
+    "ఒత్తిడి చేస్తున్నారు",
+    "సాక్ష్యం చెప్పొద్దు",
+    "డబ్బు ఇచ్చి"
+   ]
+  }
+ }
+}

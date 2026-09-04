@@ -105,3 +105,27 @@ export interface Dictation {
   quality_reasons: string[];
   state: InteractionState;
 }
+
+export type ASRSupport = "none" | "substituted" | "declared" | "native";
+
+export interface LanguageInfo {
+  code: string;
+  english_name: string;
+  endonym: string;
+  script: string;
+  states: string[];
+  asr_support: ASRSupport;
+  /** Set when this language is decoded as a different one. */
+  substituted_as: string | null;
+  lexicon_terms: number;
+  lexicon_authored: boolean;
+  lexicon_reviewed: boolean;
+  prompts_translated: boolean;
+  warning: string | null;
+  note: string;
+}
+
+export interface Languages {
+  languages: LanguageInfo[];
+  coverage: Record<ASRSupport, number>;
+}

@@ -244,6 +244,44 @@ def test_real_audio_runs_the_quality_gate(client):
     assert body["signal"]["reasons"]
 
 
+# ------------------------------------------------- languages
+
+def test_languages_endpoint_reports_support_honestly(client):
+    body = client.get("/languages", headers=OPERATOR).json()
+    by_code = {e["code"]: e for e in body["languages"]}
+
+    assert len(by_code) == 12
+    assert by_code["hi"]["asr_support"] == "native"
+    assert by_code["bho"]["substituted_as"] == "hi"
+    assert by_code["or"]["asr_support"] == "declared"
+
+    santali = by_code["sat"]
+    assert santali["asr_support"] == "none"
+    assert santali["lexicon_terms"] == 0
+    assert santali["lexicon_authored"] is False
+    assert santali["warning"]
+
+
+def test_no_language_claims_a_reviewed_lexicon(client):
+    """If this ever passes with a True in it, someone marked a lexicon reviewed
+    without a native speaker signing it."""
+    body = client.get("/languages", headers=OPERATOR).json()
+    assert not any(e["lexicon_reviewed"] for e in body["languages"])
+
+
+def test_an_interaction_can_start_in_every_registered_language(client):
+    """The end-to-end guarantee. Registering a language is a promise that a
+    caller speaking it reaches a counsellor, whatever the recognition gap."""
+    from core.events import Language as L
+    for language in L:
+        response = client.post("/interactions", headers=OPERATOR,
+                               json={"channel": "ivrs", "language": language.value})
+        assert response.status_code == 201, language.value
+        body = response.json()
+        assert body["language"] == language.value
+        assert body["next_action"]["prompt"]
+
+
 # ------------------------------------------------- dictation
 
 def test_dictation_does_not_put_words_into_the_record(client):

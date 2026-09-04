@@ -59,8 +59,18 @@ TARGET_RATE = 16000
 # credentials exist this is the better backend for exactly the callers the
 # fairness argument is about.
 LANGUAGE_CODES: Dict[Language, str] = {
-    Language.HINDI: "hi",
-    Language.BHOJPURI: "bho",
+    language: language.profile.bhashini_code
+    for language in Language
+    if language.profile.bhashini_code is not None
+}
+
+# Codes read from the ULCA catalogue but never exercised against a live
+# pipeline. They are attempted; an unavailable model surfaces as a normal
+# backend failure and the router falls through. Confirming each is a task in
+# the pilot protocol — a catalogue entry is not a capability.
+UNVERIFIED_LANGUAGES = {
+    language for language in Language
+    if language.profile.bhashini_code and not language.profile.bhashini_verified
 }
 
 
@@ -125,6 +135,12 @@ class BhashiniBackend:
         if self.inference_url and self.inference_key:
             return {"url": self.inference_url, "header": "Authorization",
                     "value": self.inference_key, "service_id": ""}
+
+        if language not in LANGUAGE_CODES:
+            raise ASRUnavailable(
+                f"Bhashini has no configured pipeline for "
+                f"{language.profile.english_name}. Declared gap, see "
+                f"core/languages.py.")
 
         cached = self._resolved.get(language.value)
         if cached:

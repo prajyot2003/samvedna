@@ -1,4 +1,4 @@
-import type { DashboardSummary, Dictation, InteractionState, Readiness, Tier } from "./types";
+import type { DashboardSummary, Dictation, InteractionState, Languages, Readiness, Tier } from "./types";
 
 const BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
 
@@ -89,6 +89,7 @@ export const api = {
 
   dashboard: () => request<DashboardSummary>("/dashboard/summary"),
   readiness: () => request<Readiness>("/readiness"),
+  languages: () => request<Languages>("/languages"),
   verifyAudit: () => request<{
     ok: boolean; records: number; head: string; summary: string;
     failures: { seq: number; reason: string }[];

@@ -471,3 +471,89 @@ the console cannot tell a consent failure from a broken microphone.
 
 Rule 1 of the intake agent has said "consent precedes analysis" since Phase 6.
 It was enforced for text and not for audio, and no test asked.
+
+## D59 — Twelve languages, chosen by caseload, with support declared per language
+Language support was three facts in three places: an enum in `core.events`, a
+Whisper token map in `services.asr.whisper_local`, and a ULCA code map in the
+Bhashini client. Adding a language meant remembering all three, and forgetting
+one broke nothing loudly — the language simply worked worse, in a way no test
+and no screen reported. `core/languages.py` is now the single table, and a test
+asserts the enum and the table name the same set.
+
+Selection is by SC/ST (PoA) Act caseload, not by speaker count: Hindi,
+Bhojpuri, Maithili, Marathi, Bengali, Telugu, Tamil, Kannada, Gujarati,
+Punjabi, Odia and Santali. Punjab has the largest Scheduled Caste share of any
+state; Odisha and the Jharkhand belt carry the largest Scheduled Tribe
+populations. A list ordered by speaker count would have given Malayalam and
+Urdu ahead of Maithili and Santali, and would have served fewer of the people
+this helpline is for.
+
+Support is a declared property with four levels, and the fourth exists because
+of Odia. NATIVE means a recogniser transcribes the language and someone has run
+it. SUBSTITUTED means it is decoded as a related language and every transcript
+says so. DECLARED means a backend documents it and nobody here has exercised
+it — "the ULCA catalogue lists Odia" and "we have transcribed Odia" are
+different claims and a system reporting them identically is reporting a hope as
+a capability. NONE means nothing transcribes it.
+
+## D60 — The coverage gap falls on the callers the Act protects, and the system says so
+Whisper has tokens for Hindi, Bengali, Marathi, Telugu, Tamil, Kannada,
+Gujarati and Punjabi. It has none for Odia, none for Maithili, none for
+Bhojpuri, and none for Santali — an Eighth Schedule Adivasi language with over
+seven million speakers, spoken across exactly the districts that generate the
+heaviest caseload under the Act.
+
+So the callers whose complaints this helpline exists to receive are the callers
+our recognisers understand least well. That is the central fairness fact about
+the system and it is asserted by a test rather than claimed on a slide: the
+states of the unserved and substituted languages must include Bihar, Jharkhand
+and Odisha. The asymmetric abstention path is the mitigation — thin or absent
+recognition lowers confidence, and lowered confidence escalates the tier rather
+than reassuring anyone.
+
+Three consequences follow through the code. Whisper raises for a language it
+has no model for rather than decoding it as something else: it would otherwise
+return fluent nonsense at a respectable confidence, and that string reaches the
+extractor and feeds Channel A, the heaviest-weighted channel in the score. The
+router distinguishes a coverage gap from an outage, because "nobody built a
+recogniser for your language" is permanent and "the recogniser is down" is
+transient and they produce the same empty transcript. And the console names the
+support level before the call, ordered worst-first — a counsellor who asks an
+Odia speaker to talk and sees nothing appear will assume the microphone is
+broken and lose minutes on a call where minutes matter.
+
+## D61 — Clinical instruments are not machine-translated, and prompts fall back visibly
+PHQ-9, GAD-7, PC-PTSD-5 and the C-SSRS are validated instruments whose
+psychometric properties belong to specific wordings. A machine translation of
+"little interest or pleasure in doing things" into Odia is not the Odia PHQ-9;
+it is a new, unvalidated question wearing a validated one's name, and scoring
+it as the instrument would report a screening result with nothing behind it.
+
+So `_p()` falls back to Hindi for any language whose prompts have not been
+authored, `translated()` reports which, and the console tells the counsellor
+that the items will appear in Hindi and that they must not read the Hindi
+aloud. A counsellor reading a Hindi item to a Tamil speaker is a visible,
+correctable limitation. A fabricated Tamil item that scores as PHQ-9 is an
+invisible, uncorrectable one. Obtaining the officially validated translations
+that exist for several of these languages is a pilot-protocol task.
+
+## D62 — A crisis lexicon nobody can read is worse than none, so Santali ships empty
+The ten new lexicons are marked MACHINE_DRAFTED — a status deliberately
+distinct from the older UNREVIEWED, because "a person assembled this and nobody
+checked it" and "a language model wrote this" are different risks and deserve
+different words. All twelve languages are readiness blockers.
+
+Santali has no terms at all. Nobody involved in building this speaks it, and a
+machine-drafted crisis lexicon in a language the drafter does not know is worse
+than an empty one: it looks like coverage and produces silent false negatives,
+in the one category where a false negative is a death. The loader permits an
+empty lexicon only when the status is NOT_AUTHORED, and refuses a file that
+carries terms while still claiming nobody wrote it.
+
+Santali is registered as a supported language regardless, so a caller reaching
+14566 in Santali is served by a counsellor typing rather than turned away or
+quietly handled in a language they did not choose. What makes shipping an empty
+file defensible rather than negligent is that the C-SSRS is administered
+unconditionally on every interaction: no lexicon is load-bearing on its own,
+and the console tells the counsellor that the screener is the safeguard they
+are relying on for this call.

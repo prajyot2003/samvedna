@@ -17,11 +17,12 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
 from core.events import Language
+from core.languages import ASRSupport
 from services.asr.base import ASRBackend, ASRUnavailable, Transcript
 from services.asr.bhashini import BhashiniBackend
 from services.asr.whisper_local import SUBSTITUTED_LANGUAGES, WhisperBackend
@@ -85,5 +86,33 @@ class ASRRouter:
                 attempts=tuple(attempts),
             )
 
+        # A coverage gap and an outage produce the same empty transcript and
+        # must not produce the same message. "Nobody has built a recogniser for
+        # your language" is a permanent fact a counsellor should be told once;
+        # "the recogniser is down" is a transient one they should wait out.
+        if language.profile.asr_support is ASRSupport.NONE:
+            raise ASRUnavailable(
+                f"No speech recognition exists for "
+                f"{language.profile.english_name} in this system. This is a "
+                f"declared coverage gap, not a failure — the counsellor enters "
+                f"the caller's words directly, and the acoustic channels are "
+                f"still measured. See core/languages.py.")
+
         raise ASRUnavailable(
             "no ASR backend could serve this request: " + "; ".join(errors or attempts))
+
+    def capability(self, language: Language) -> Dict[str, object]:
+        """What this router can actually do for a language, right now.
+
+        Reported to the console so a counsellor learns that Odia has no local
+        recogniser before they ask a caller to speak, rather than after."""
+        usable = [b.name for b in self.backends if b.available()]
+        return {
+            "language": language.value,
+            "support": language.profile.asr_support.value,
+            "backends_available": usable,
+            "substituted_as": (language.profile.whisper_token
+                               if language.profile.whisper_substitutes else None),
+            "transcription_possible": bool(usable)
+            and language.profile.asr_support is not ASRSupport.NONE,
+        }

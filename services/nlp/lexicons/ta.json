@@ -1,0 +1,84 @@
+{
+ "language": "ta",
+ "language_name": "Tamil",
+ "version": "2026-09-04.draft",
+ "review": {
+  "status": "MACHINE_DRAFTED",
+  "reviewed_by": null,
+  "reviewed_on": null,
+  "note": "MACHINE-DRAFTED SEED. Written by a language model, not by a speaker of this language, and NOT fit for production use as written. It exists so that the language can be carried end to end through the pipeline and so that reviewers have something concrete to correct, which is faster than starting from an empty file. Two failure modes to look for: a term that is grammatical but not what people actually say, and — far more dangerous — a missing indirect expression of suicidal intent, because people rarely state it plainly. A native speaker AND a counsellor with crisis-line experience must both sign this file before the language is offered to callers."
+ },
+ "categories": {
+  "self_harm": {
+   "severity": "critical",
+   "note": "Feeds the self-harm hard rule directly. Escalates to CRITICAL with no model consulted. False positives here cost a screener question; false negatives cost a life.",
+   "terms": [
+    "தற்கொலை",
+    "உயிரை விட்டுவிடுவேன்",
+    "செத்துவிடுவேன்",
+    "வாழ விருப்பமில்லை",
+    "என்னை முடித்துக்கொள்வேன்",
+    "தூக்குப் போட்டுக்கொள்வேன்",
+    "விஷம் குடிப்பேன்",
+    "இனி வாழ மாட்டேன்"
+   ]
+  },
+  "hopelessness": {
+   "severity": "high",
+   "note": "Not itself a crisis, but the strongest verbal predictor of one. Raises the tier, never sets it.",
+   "terms": [
+    "வழியே இல்லை",
+    "நம்பிக்கை இல்லை",
+    "எதுவும் மிச்சமில்லை",
+    "எல்லாம் முடிந்தது",
+    "இனி ஒன்றும் நடக்காது",
+    "நான் சுமையாகிவிட்டேன்"
+   ]
+  },
+  "imminent_violence": {
+   "severity": "critical",
+   "note": "The accused is present, nearby, or has threatened immediate harm. Feeds the imminent-danger rule and the s.15A protection path.",
+   "terms": [
+    "கொன்றுவிடுவோம் என்று மிரட்டினார்கள்",
+    "கொன்றுவிடுவார்கள்",
+    "அடிக்க வருகிறார்கள்",
+    "வீட்டுக்கு வெளியே நிற்கிறார்கள்",
+    "இப்போதே அடிப்பார்கள்",
+    "ஆயுதத்துடன் வந்தார்கள்"
+   ]
+  },
+  "fear": {
+   "severity": "moderate",
+   "note": "Sustained fear restricting movement or daily life. Contributes to Channel A rather than triggering a rule.",
+   "terms": [
+    "ரொம்ப பயமாக இருக்கிறது",
+    "பயத்தில்",
+    "வீட்டை விட்டு வெளியே வருவதில்லை",
+    "வெளியே போக முடியாது"
+   ]
+  },
+  "isolation": {
+   "severity": "moderate",
+   "note": "Social boycott, the characteristic collective sanction in atrocity cases. Named in the Act's own offence list.",
+   "terms": [
+    "யாரும் பேசுவதில்லை",
+    "ஊர்க்காரர்கள்",
+    "ஒதுக்கி வைத்துவிட்டார்கள்",
+    "தண்ணீர் எடுக்க விடுவதில்லை",
+    "சமூக விலக்கு"
+   ]
+  },
+  "coercion": {
+   "severity": "high",
+   "note": "Pressure to withdraw a complaint. Directly relevant to witness protection under s.15A(11).",
+   "terms": [
+    "புகாரை வாபஸ்",
+    "வழக்கை வாபஸ் வாங்கு",
+    "சமரசம் செய்துகொள்",
+    "நெருக்கடி கொடுக்கிறார்கள்",
+    "சாட்சி சொல்லாதே",
+    "பணம் கொடுத்து"
+   ]
+  }
+ }
+}

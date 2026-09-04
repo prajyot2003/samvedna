@@ -18,6 +18,7 @@ from core.svi.factors import CORE_COVERAGE_KEYS, FACTORS_BY_KEY, OFFENCE_SEVERIT
 from core.svi.instruments import CSSRSScreen, Screeners
 from services.audio.vad import ConversationalFeatures
 from services.nlp import distress, facts, redaction
+from services.nlp.lexicon import LEXICON_DIR as LEXICON_SOURCE
 from services.nlp.lexicon import (RULE_CATEGORIES, analyse, load_lexicon, normalise,
                                   production_ready, tokenise)
 
@@ -107,10 +108,46 @@ def test_empty_and_clean_text_are_handled():
 
 # ------------------------------------------------- crisis lexicons
 
-def test_both_supported_languages_have_a_lexicon():
-    """A language without a crisis lexicon is not a supported language (D1)."""
+def test_every_language_has_a_lexicon_file():
+    """A language with no lexicon FILE is not a supported language (D1). A file
+    with no terms is a different, declared state — see the Santali test."""
     for language in Language:
-        assert load_lexicon(language).term_count > 0
+        assert load_lexicon(language) is not None
+
+
+def test_an_unauthored_lexicon_is_allowed_to_be_empty_and_says_so():
+    """Santali. Nobody on this team speaks it, and inventing crisis terms in a
+    language you do not know produces silent false negatives that look exactly
+    like coverage. Empty and declared beats fabricated and confident."""
+    lexicon = load_lexicon(Language.SANTALI)
+    assert lexicon.term_count == 0
+    assert not lexicon.authored
+    warning = lexicon.review_warning()
+    assert warning is not None
+    assert "suicide screener is still administered" in warning
+
+
+def test_an_empty_lexicon_cannot_pretend_to_be_authored(tmp_path):
+    """The one way this design fails is a file that carries terms while still
+    claiming nobody wrote it, so the loader refuses that combination."""
+    import json
+    from services.nlp.lexicon import load_lexicon as load
+    doc = json.loads((LEXICON_SOURCE / "sat.json").read_text(encoding="utf-8"))
+    doc["categories"]["self_harm"]["terms"] = ["invented"]
+    (tmp_path / "sat.json").write_text(json.dumps(doc, ensure_ascii=False),
+                                       encoding="utf-8")
+    with pytest.raises(ValueError, match="NOT_AUTHORED"):
+        load(Language.SANTALI, directory=str(tmp_path))
+
+
+def test_a_machine_drafted_lexicon_is_never_reported_as_reviewed():
+    """The added languages were drafted by a model. That is a weaker guarantee
+    than the hand-assembled seeds, and it must not read as a stronger one."""
+    for language in (Language.MARATHI, Language.TELUGU, Language.ODIA):
+        lexicon = load_lexicon(language)
+        assert lexicon.authored
+        assert not lexicon.reviewed
+        assert lexicon.review_warning() is not None
 
 
 def test_normalisation_makes_equivalent_devanagari_match():
@@ -178,11 +215,22 @@ def test_unreviewed_lexicons_are_used_but_declared():
 
 def test_production_readiness_is_blocked_until_lexicons_are_reviewed():
     """A system that escalates suicide risk from a word list nobody qualified
-    has read is not ready for live calls. Expected to fail until sign-off."""
+    has read is not ready for live calls. Expected to fail until sign-off, and
+    every language must account for itself separately — a gate that reports one
+    blocker for twelve languages hides eleven of them."""
     ready, blockers = production_ready()
     assert not ready
     assert len(blockers) == len(Language)
-    assert all("native speaker" in b for b in blockers)
+    assert all("speaker" in b for b in blockers)
+
+
+def test_the_readiness_gate_names_the_language_with_no_lexicon_differently():
+    """'Nobody has checked this list' and 'this list does not exist' are
+    different problems needing different people, so they get different words."""
+    _, blockers = production_ready()
+    santali = [b for b in blockers if "Santali" in b]
+    assert len(santali) == 1
+    assert "no crisis lexicon at all" in santali[0]
 
 
 # ------------------------------------------------- fact extraction

@@ -36,16 +36,28 @@ from typing import Dict, List, Optional
 import numpy as np
 
 from core.events import Language
+import core.languages  # noqa: F401 - the table LANGUAGE_CODES is built from
 from services.asr.base import ASRUnavailable, Transcript, TranscriptSegment
 
-# What we ask Whisper to decode as. Bhojpuri has no Whisper language token; it
-# is decoded as Hindi and flagged, never silently relabelled.
+# What we ask Whisper to decode as, derived from the one language table rather
+# than restated here. Several languages this helpline serves have no Whisper
+# token at all — Odia and Santali among them — and those must raise rather than
+# quietly decode as something else.
 LANGUAGE_CODES: Dict[Language, str] = {
-    Language.HINDI: "hi",
-    Language.BHOJPURI: "hi",
+    language: language.profile.whisper_token
+    for language in Language
+    if language.profile.whisper_token is not None
 }
 
-SUBSTITUTED_LANGUAGES = {Language.BHOJPURI}
+# Languages Whisper decodes as a DIFFERENT language because it has no model for
+# them. Usable and measurably worse; always flagged on the provenance line.
+SUBSTITUTED_LANGUAGES = {
+    language for language in Language if language.profile.whisper_substitutes
+}
+
+UNSUPPORTED_LANGUAGES = {
+    language for language in Language if language.profile.whisper_token is None
+}
 
 DEFAULT_MODEL = os.environ.get("SAMVEDNA_WHISPER_MODEL", "small")
 DEFAULT_DEVICE = os.environ.get("SAMVEDNA_WHISPER_DEVICE", "cpu")
@@ -120,6 +132,17 @@ class WhisperBackend:
 
     def transcribe(self, audio: np.ndarray, sample_rate: int,
                    language: Language) -> Transcript:
+        if language in UNSUPPORTED_LANGUAGES:
+            # Refusing is the whole point. Whisper will happily decode Santali
+            # audio as whatever it thinks it hears and return fluent nonsense
+            # with a respectable confidence, and that string would then be read
+            # by the extraction layer and feed Channel A. A declared gap that
+            # falls through to the next backend, and failing that reaches the
+            # counsellor as "type it instead", is the honest behaviour.
+            raise ASRUnavailable(
+                f"Whisper has no model for {language.profile.english_name}. "
+                f"This is a declared coverage gap, not a fault: see "
+                f"core/languages.py.")
         self.load()
         audio = np.asarray(audio, dtype=np.float32)
         if sample_rate != WHISPER_RATE:

@@ -3,6 +3,7 @@ import { api } from "./api";
 import type { InteractionState, Tier } from "./types";
 import { ActionList } from "./components/ActionList";
 import { Composer } from "./components/Composer";
+import { LanguagePicker } from "./components/LanguagePicker";
 import { NextQuestion } from "./components/NextQuestion";
 import { OverrideDialog } from "./components/OverrideDialog";
 import { StatusStrip } from "./components/StatusStrip";
@@ -68,16 +69,8 @@ export function CounsellorConsole() {
             A new call. Consent is requested before anything is assessed.
           </p>
           {error && <p className="error">{error}</p>}
-          <div className="answers">
-            <button className="primary" disabled={busy}
-                    onClick={() => run(() => api.start("hi"))}>
-              Hindi caller
-            </button>
-            <button disabled={busy}
-                    onClick={() => run(() => api.start("bho"))}>
-              Bhojpuri caller
-            </button>
-          </div>
+          <LanguagePicker busy={busy}
+                          onStart={(code) => run(() => api.start(code))} />
         </div>
       </div>
     );

@@ -38,6 +38,8 @@ from core.events import (Channel, ConsentDecision, ConsentScope, Instrument, Lan
                          Tier)
 from services.bus import InProcessBus
 from services.config import SETTINGS
+from core.languages import coverage_summary
+from services.intake.schedule import OPENING_PROMPT, translated
 from services.nlp.lexicon import load_lexicon, production_ready
 from services.pipeline import ConsentRequired, TriagePipeline
 from services.store.repo import Repository
@@ -176,6 +178,39 @@ def create_app(repo: Optional[Repository] = None, bus=None,
             }
         return {"production_ready": ready, "blockers": blockers,
                 "lexicons": lexicons}
+
+    @app.get("/languages")
+    async def languages() -> Dict[str, Any]:
+        """What this deployment can actually do for each language.
+
+        Served so the console can tell a counsellor that Odia has no local
+        recogniser BEFORE they ask a caller to speak, and so that a reviewer can
+        read the coverage gap off the running system rather than off a slide.
+        """
+        entries = []
+        for language in Language:
+            profile = language.profile
+            lexicon = load_lexicon(language)
+            entry = {
+                "code": profile.code,
+                "english_name": profile.english_name,
+                "endonym": profile.endonym,
+                "script": profile.script,
+                "states": list(profile.states),
+                "asr_support": profile.asr_support.value,
+                "substituted_as": (profile.whisper_token
+                                   if profile.whisper_substitutes else None),
+                "lexicon_terms": lexicon.term_count,
+                "lexicon_authored": lexicon.authored,
+                "lexicon_reviewed": lexicon.reviewed,
+                "prompts_translated": translated(OPENING_PROMPT, language),
+                "warning": lexicon.review_warning(),
+                "note": profile.note,
+            }
+            if asr_router is not None:
+                entry["capability"] = asr_router.capability(language)
+            entries.append(entry)
+        return {"languages": entries, "coverage": coverage_summary()}
 
     # -------------------------------------------------------- interactions
 
